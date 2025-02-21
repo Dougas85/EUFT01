@@ -1,27 +1,29 @@
+import os
 import pandas as pd
 from datetime import datetime
+from flask import Flask, request, render_template, redirect
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+
+# Criar diretório de uploads, se não existir
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 def calcular_tempo_utilizacao(row):
     try:
         partida = datetime.strptime(f"{row['Data de Partida'].date()} {row['Hora de Partida']}", "%Y-%m-%d %H:%M")
         retorno = datetime.strptime(f"{row['Data de Retorno'].date()} {row['Hora de Retorno']}", "%Y-%m-%d %H:%M")
-    except KeyError:
-        raise KeyError("Erro ao acessar as colunas de Data/Hora. Verifique os nomes das colunas na planilha.")
-    except ValueError as e:
-        print(f"Erro ao converter data/hora: {e}")
-        print(f"Data de Partida: {row['Data de Partida']}, Hora de Partida: {row['Hora de Partida']}")
-        print(f"Data de Retorno: {row['Data de Retorno']}, Hora de Retorno: {row['Hora de Retorno']}")
-        raise e
-    duracao = (retorno - partida).total_seconds() / 3600  # Convertendo para horas
-    duracao -= 1  # Subtrair 1 hora como horário de intervalo
-    return duracao
+    except Exception as e:
+        raise ValueError(f"Erro ao converter data/hora: {e}")
+    
+    duracao = (retorno - partida).total_seconds() / 3600  # Converter para horas
+    return round(duracao - 1, 2)  # Subtrair 1 hora para intervalo
 
 def calcular_euft(df, dias_uteis_mes):
-    # Converter colunas de data para datetime
     df['Data de Partida'] = pd.to_datetime(df['Data de Partida'], format='%d/%m/%Y')
     df['Data de Retorno'] = pd.to_datetime(df['Data de Retorno'], format='%d/%m/%Y')
 
-    # Agrupar por placa e data de partida, somando os valores
     df_agrupado = df.groupby(['Placa', 'Data de Partida']).agg({
         'Hora de Partida': 'first',
         'Data de Retorno': 'first',
@@ -33,16 +35,13 @@ def calcular_euft(df, dias_uteis_mes):
     df_agrupado['Tempo Utilizacao'] = df_agrupado.apply(calcular_tempo_utilizacao, axis=1)
     df_agrupado['Distancia Percorrida'] = df_agrupado['Hodômetro Retorno'] - df_agrupado['Hodômetro Partida']
 
-    # Ajustar parâmetros para o veículo leve GFE1G42
     def verificar_corretude(row):
         if row['Placa'] == 'GFE1G42':
             return 1 <= row['Tempo Utilizacao'] <= 8 and 8 <= row['Distancia Percorrida'] <= 100
-        else:
-            return 2 <= row['Tempo Utilizacao'] <= 8 and 6 <= row['Distancia Percorrida'] <= 80
+        return 2 <= row['Tempo Utilizacao'] <= 8 and 6 <= row['Distancia Percorrida'] <= 80
 
     df_agrupado['Correto'] = df_agrupado.apply(verificar_corretude, axis=1)
 
-    # Identificar erros
     def motivo_erro(row):
         if row['Placa'] == 'GFE1G42':
             if not (1 <= row['Tempo Utilizacao'] <= 8):
@@ -68,32 +67,27 @@ def calcular_euft(df, dias_uteis_mes):
     )
     resultados_por_veiculo['EUFT'] = resultados_por_veiculo['Dias_Corretos'] / (resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional'])
 
-    dias_corretos_total = resultados_por_veiculo['Dias_Corretos'].sum()
-    dias_totais_total = resultados_por_veiculo['Dias_Totais'].sum()
-    adicional_total = resultados_por_veiculo['Adicional'].sum()
-    euft_total = dias_corretos_total / (dias_totais_total + adicional_total)
+    return resultados_por_veiculo, df_agrupado[df_agrupado['Motivo Erro'] != '']
 
-    return resultados_por_veiculo, dias_corretos_total, dias_totais_total, adicional_total, euft_total, df_agrupado[df_agrupado['Motivo Erro'] != '']
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            return redirect(request.url)
+        if file:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(file_path)
+            try:
+                df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
+                resultados_veiculo, erros = calcular_euft(df, 20)
+                return render_template('index.html', resultados=resultados_veiculo.to_html(index=False, float_format="%.2f"), erros=erros.to_html(index=False, float_format="%.2f"))
+            except Exception as e:
+                return f"Ocorreu um erro ao processar o arquivo: {e}"
+    return render_template('index.html')
 
-# Carregar a planilha
-
-# Verifique se o caminho do arquivo está correto
-file_path = r'C:\Users\81111045\PycharmProjects\PROJETOS-WEB\TesteApp.csv'
-
-# Tente carregar o arquivo CSV com o delimitador correto
-df = pd.read_csv(file_path, delimiter=',', encoding='utf-8')
-
-# Defina a quantidade de dias úteis do mês
-dias_uteis_mes = 20  # Ajuste conforme necessário
-
-# Verificar se as colunas 'Data de Partida' e 'Hora de Partida' existem
-if 'Data de Partida' in df.columns and 'Hora de Partida' in df.columns:
-    resultados_veiculo, dias_corretos, dias_totais, adicional, euft, erros = calcular_euft(df, dias_uteis_mes)
-
-    print("Resultados finais por veículo:")
-    print(resultados_veiculo)
-    print(f"Dias Corretos: {dias_corretos}, Dias Totais: {dias_totais}, Adicional: {adicional}, EUFT: {euft:.2f}")
-    print("Erros encontrados:")
-    print(erros[['Placa', 'Data de Partida', 'Motivo Erro']])
-else:
-    print("As colunas 'Data de Partida' e/ou 'Hora de Partida' não existem no DataFrame.")
+if __name__ == '__main__':
+    app.run(debug=True, port=5002)
+    
