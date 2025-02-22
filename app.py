@@ -70,8 +70,6 @@ def calcular_euft(df, dias_uteis_mes):
 
     return resultados_por_veiculo, df_agrupado[df_agrupado['Motivo Erro'] != '']
 
-import logging
-
 logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/', methods=['GET', 'POST'])
