@@ -1,39 +1,58 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EUFT</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v={{ config['CACHE_BUSTER'] }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    
-    <h1>Upload de Arquivo CSV</h1>
-    
-    <!-- Formulário para upload do arquivo CSV -->
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".csv" required>
-        <button type="submit">Upload</button>
-    </form>
-    
-    {% if show_buttons %}
-        <!-- Botões visíveis após o upload do arquivo -->
-        <button id="showResults">Mostrar Resultados</button>
-        <button id="showErrors">Mostrar Erros</button>
 
-        <div id="results" style="display:none;">
-            <h2>Resultados</h2>
-            {{ results|safe }}
+<nav class="navbar navbar-light bg-light">
+    <span class="navbar-brand mx-auto">EUFT - Efetividade na Utilização da Frota</span>
+</nav>
+
+<div class="container mt-5">
+    <div class="card central-card">
+        <div class="card-header text-center">
+            <h3>EUFT Diário</h3>
         </div>
+        <div class="card-body text-center">
+            <form method="post" enctype="multipart/form-data">
+                <input type="file" class="form-control-file mb-3" name="file">
+                <button type="submit" class="btn btn-success">Upload</button>
+            </form>
+        </div>
+    </div>
 
-        <div id="errors" style="display:none;">
-            <h2>Erros</h2>
-            {{ errors|safe }}
+    {% if resultados %}
+        <button class="btn btn-info mt-4" onclick="toggleVisibility('resultados')">Mostrar Resultados</button>
+        <div id="resultados" class="mt-3" style="display: none;">
+            {{ resultados|safe }}
         </div>
     {% endif %}
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    {% if erros %}
+        <button class="btn btn-danger mt-4" onclick="toggleVisibility('erros')">Mostrar Erros</button>
+        <div id="erros" class="mt-3" style="display: none;">
+            {{ erros|safe }}
+        </div>
+    {% endif %}
+</div>
+
+<footer class="footer mt-auto py-3 bg-light">
+    <div class="container">
+        <span class="text-muted">© 2025 GERAE PPE. Todos os direitos reservados.</span>
+    </div>
+</footer>
+
+<script>
+    function toggleVisibility(id) {
+        var element = document.getElementById(id);
+        element.style.display = element.style.display === "none" ? "block" : "none";
+    }
+</script>
+
 </body>
 </html>
