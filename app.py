@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 from flask import Flask, request, render_template, redirect
 
-
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
@@ -78,8 +77,11 @@ logging.basicConfig(level=logging.DEBUG)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     try:
-        # Seu código aqui...
         logging.debug("Requisição recebida na rota '/'")
+        show_buttons = False
+        results = None
+        errors = None
+
         if request.method == 'POST':
             logging.debug("Método POST recebido")
             if 'file' not in request.files:
@@ -96,16 +98,25 @@ def index():
                 try:
                     df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
                     logging.debug("Arquivo CSV carregado com sucesso")
-                    # Processamento e retorno
+
+                    # Ajuste para o número de dias úteis do mês
+                    dias_uteis_mes = 22  # Exemplo, modifique conforme necessário
+                    resultados_por_veiculo, erros = calcular_euft(df, dias_uteis_mes)
+
+                    # Definir variáveis para enviar para o template
+                    show_buttons = True
+                    results = resultados_por_veiculo.to_html(classes='table table-striped', index=False)
+                    errors = erros.to_html(classes='table table-striped', index=False)
+                    
                 except Exception as e:
                     logging.error(f"Erro ao processar o arquivo: {e}")
                     return f"Ocorreu um erro ao processar o arquivo: {e}"
-        return render_template('index.html')
+
+        return render_template('index.html', show_buttons=show_buttons, results=results, errors=errors)
+    
     except Exception as e:
         logging.error(f"Erro na rota /: {e}")
         return f"Ocorreu um erro no servidor: {e}"
 
-
 if __name__ == '__main__':
     app.run(debug=True, port=5002)
-    
