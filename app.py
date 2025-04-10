@@ -20,20 +20,24 @@ def calcular_tempo_utilizacao(row):
     duracao = (retorno - partida).total_seconds() / 3600  # Converter para horas
     return round(duracao - 1, 2)  # Subtrair 1 hora para intervalo
 
+def formatar_tempo_horas_minutos(tempo):
+    horas = int(tempo)
+    minutos = int((tempo - horas) * 60)
+    return f"{horas}h {minutos}m"
+
 def calcular_euft(df, dias_uteis_mes):
     df['Data de Partida'] = pd.to_datetime(df['Data de Partida'], format='%d/%m/%Y')
     df['Data de Retorno'] = pd.to_datetime(df['Data de Retorno'], format='%d/%m/%Y')
 
-    df_agrupado = df.groupby(['Placa', 'Data de Partida']).agg({
-        'Hora de Partida': 'first',
-        'Data de Retorno': 'first',
-        'Hora de Retorno': 'first',
-        'Hodômetro Partida': 'sum',
-        'Hodômetro Retorno': 'sum'
-    }).reset_index()
+    # Calcular tempo de utilização para cada linha
+    df['Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
+    df['Distancia Percorrida'] = df['Hodômetro Retorno'] - df['Hodômetro Partida']
 
-    df_agrupado['Tempo Utilizacao'] = df_agrupado.apply(calcular_tempo_utilizacao, axis=1)
-    df_agrupado['Distancia Percorrida'] = df_agrupado['Hodômetro Retorno'] - df_agrupado['Hodômetro Partida']
+    # Agrupar por placa e data de partida, somando os tempos de utilização e distâncias percorridas
+    df_agrupado = df.groupby(['Placa', 'Data de Partida']).agg({
+        'Tempo Utilizacao': 'sum',
+        'Distancia Percorrida': 'sum'
+    }).reset_index()
 
     def verificar_corretude(row):
         if row['Placa'] == 'GFE1G42':
@@ -67,6 +71,9 @@ def calcular_euft(df, dias_uteis_mes):
     )
     resultados_por_veiculo['EUFT'] = resultados_por_veiculo['Dias_Corretos'] / (resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional'])
 
+    # Formatar o tempo de utilização em horas e minutos
+    df_agrupado['Tempo Utilizacao Formatado'] = df_agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
+
     return resultados_por_veiculo, df_agrupado[df_agrupado['Motivo Erro'] != '']
 
 @app.route('/', methods=['GET', 'POST'])
@@ -76,17 +83,14 @@ def index():
             return redirect(request.url)
         file = request.files['file']
         if file.filename == '':
-            return redirect(request.url)
-        if file:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+           _path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
             try:
                 df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
                 resultados_veiculo, erros = calcular_euft(df, 20)
                 return render_template('index.html', resultados=resultados_veiculo.to_html(index=False, float_format="%.2f"), erros=erros.to_html(index=False, float_format="%.2f"))
-            except Exception as e:
-                return f"Ocorreu um erro ao processar o arquivo: {e}"
+           reu um erro ao processar o arquivo: {e}"
     return render_template('index.html')
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     app.run(debug=True, port=5002)
