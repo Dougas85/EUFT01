@@ -83,14 +83,17 @@ def index():
             return redirect(request.url)
         file = request.files['file']
         if file.filename == '':
-           _path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            return redirect(request.url)
+        if file:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
             try:
                 df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
                 resultados_veiculo, erros = calcular_euft(df, 20)
                 return render_template('index.html', resultados=resultados_veiculo.to_html(index=False, float_format="%.2f"), erros=erros.to_html(index=False, float_format="%.2f"))
-           reu um erro ao processar o arquivo: {e}"
+            except Exception as e:
+                return f"Ocorreu um erro ao processar o arquivo: {e}"
     return render_template('index.html')
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     app.run(debug=True, port=5002)
