@@ -27,8 +27,8 @@
     </div>
 
     {% if resultados %}
-        <button class="btn btn-info mt-4" onclick="toggleVisibility('resultados')">Mostrar Resultados</button>
-        <div id="resultados" class="mt-3" style="display: none;">
+        <button id="showResults" class="btn btn-info mt-4">Mostrar Resultados</button>
+        <div id="results" class="mt-3 table-card" style="display: none;">
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <tbody>
@@ -40,8 +40,8 @@
     {% endif %}
 
     {% if erros %}
-        <button class="btn btn-danger mt-4" onclick="toggleVisibility('erros')">Mostrar Erros</button>
-        <div id="erros" class="mt-3" style="display: none;">
+        <button id="showErrors" class="btn btn-danger mt-4">Mostrar Erros</button>
+        <div id="errors" class="mt-3 table-card" style="display: none;">
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <tbody>
@@ -52,6 +52,7 @@
         </div>
     {% endif %}
 </div>
+
 
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container">
