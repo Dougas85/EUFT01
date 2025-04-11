@@ -4,7 +4,6 @@ body {
 
 .central-card,  .table-card {
     transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
-    background-color: #ffffff; /* Cor padrão */
 }
 
 .central-card:hover, .table-card:hover {
@@ -12,6 +11,12 @@ body {
     background-color: #d1ecf1; /* Cor azul clara quando o mouse passa por cima */
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Pequena sombra para destacar */
 }
+
+.table-card {
+    text-align: center;
+    margin: 0 auto;
+}
+
 
 .btn-success {
     background-color: #28a745;
@@ -46,9 +51,5 @@ body {
 
 .table th {
     font-weight: bold;
-}
-.table-card {
-    text-align: center;
-    margin: 0 auto;
 }
 
