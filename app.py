@@ -13,20 +13,14 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 def calcular_tempo_utilizacao(row):
     try:
         partida = datetime.strptime(f"{row['Data de Partida'].date()} {row['Hora de Partida']}", "%Y-%m-%d %H:%M")
-        if pd.isna(row['Data de Retorno']) or pd.isna(row['Hora de Retorno']):
-            return 'Veiculo sem retorno registrado'
         retorno = datetime.strptime(f"{row['Data de Retorno'].date()} {row['Hora de Retorno']}", "%Y-%m-%d %H:%M")
     except Exception as e:
         raise ValueError(f"Erro ao converter data/hora: {e}")
     
     duracao = (retorno - partida).total_seconds() / 3600  # Converter para horas
-    if row['Almoço'] == 'S':
-        duracao -= 1  # Subtrair 1 hora para intervalo de almoço
-    return round(duracao, 2)
+    return round(duracao - 1, 2)  # Subtrair 1 hora para intervalo
 
 def formatar_tempo_horas_minutos(tempo):
-    if isinstance(tempo, str):
-        return tempo
     horas = int(tempo)
     minutos = int((tempo - horas) * 60)
     return f"{horas}h {minutos}m"
@@ -42,9 +36,7 @@ def calcular_euft(df, dias_uteis_mes):
     # Agrupar por placa e data de partida, somando os tempos de utilização e distâncias percorridas
     df_agrupado = df.groupby(['Placa', 'Data de Partida']).agg({
         'Tempo Utilizacao': 'sum',
-        'Distancia Percorrida': 'sum',
-        'Lotacao Patrimonial': 'first',  
-        'Unidade Operacional': 'first'  
+        'Distancia Percorrida': 'sum'
     }).reset_index()
 
     def verificar_corretude(row):
