@@ -10,6 +10,42 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
+# Lista de veículos a serem analisados
+
+# Lista de placas a serem analisadas (copiada da sua mensagem, transformada em lista Python)
+placas_permitidas = set([
+    "BYY6C91", "DUQ9B41", "FDG9E01", "SSV9F54", "SSW2J17", "SSX2G21", "SVD6C35", "EZH6I01", "DPG1F21",
+    "EZO3F01", "FTP6G23", "GEO4A61", "STU4F87", "BZG4J41", "GDN6E61", "FTU6A14", "STY2C05", "DCU1G71",
+    "FQT8B21", "EGN4J61", "FFD2E31", "GAO8E14", "SSV6B04", "DYJ3612", "FYD8G81", "BYI7757", "FZR2E06",
+    "GDT3E14", "FQN3E51", "FUH6A71", "FYG9A32", "SVE5C87", "SWP2F95", "EEV5891", "FYW2E51", "FIN4G03",
+    "FVC9J65", "FNW5B31", "BVM9F41", "GBX7E84", "FIG3F11", "FIN5A81", "SSX4B17", "GHR4A76", "GCK3A92",
+    "DMW4E81", "GDY0I71", "SSW4F26", "TIQ9B00", "GCH3H66", "EEE4A47", "ETQ1463", "FSO7I11", "FXT4I65",
+    "DAG5D81", "FHE7H81", "CAG0F76", "GDI0F31", "FVR5E91", "TIT2E62", "FCT0G81", "GFE1A11", "CPV4H86",
+    "FWQ3H51", "GIF6B41", "GAF7I04", "SST6E95", "SSU5H30", "FUK9H76", "DSL8C81", "GIQ7H41", "GEB9I03",
+    "GJT2B76", "GHG9A31", "GDY7J34", "CPG1J41", "EAH5B61", "DZI9H91", "ELW1J81", "GHM5G01", "CUI0J64",
+    "GEE2H95", "DIV8H12", "GHQ8E12", "EOO2F01", "FBX7B51", "FFU6A91", "DSF2J61", "TIV4H69", "FPU7H51",
+    "FWD7871", "FCH4D85", "STW0G22", "EOD5A61", "SWQ1J54", "BYQ3741", "GDK7A21", "TIZ4J08", "FPB3C81",
+    "FQW8D92", "SVH6I04", "ETH5225", "EXF1E61", "EOC9A56", "BYQ3E57", "BYY9F37", "FVZ3A11", "FCN6E81",
+    "GCD7E61", "DEF9552", "ESF1J01", "FHZ4036", "FPE6E71", "SWY1J34", "EJV8F41", "BYZ6441", "FYW0F71",
+    "GEU7D21", "GJH3E85", "GCM6A31", "GDB0D01", "SVE3D04", "SSV8C98", "SSZ7I35", "GIC3A67", "FGX1D51",
+    "FJK4D93", "GEN1J52", "EHX0332", "FOO6I81", "SSU9E50", "SSX4G51", "STL8F48", "BQU9J42", "BSW5E97",
+    "CUF4B12", "ECZ3I77", "ENU8I04", "FQG9F27", "FUO6G87", "GIE9B87", "BWW9048", "CKU8601", "DNU1631",
+    "ELE4G71", "EPT6183", "FMS7635", "FPD7233", "DKZ2691", "EBD3111", "EOF0H11", "FCO3I61", "FIH0D32",
+    "FSL3J21", "FYY6J21", "GIA4A31", "DGU3H51", "DUS7J24", "EIY3G12", "EUC5E91", "FYK5F96", "GAO3F62",
+    "GAY6J90", "DST5621", "ECE0822", "FII9D21", "FTQ0114", "SUY7J13", "CTC2I01", "EIV9A31", "EUW1E31",
+    "FXJ0H41", "CUH8E73", "SST2C29", "SSX9H56", "SWN1E65", "ESQ8C87", "FMJ9C42", "GAA6C27", "GBP4G17",
+    "GDQ3J47", "FIL4B51", "SUA7J06", "GEI3A45", "GFC0H62", "GGY7H92", "GIH9G74", "ECV9F67", "FXP9F72",
+    "GAX1G35", "GGJ6B17", "GHI1G95", "DNW7483", "GDA9314", "FPO2C36", "FWG0D07", "GAD3D71", "GFF8H74",
+    "GGC2H81", "SST9C38", "STW0F02", "ECN8A02", "BYX9A33", "EXV4E03", "FCW4A72", "FKC6B51", "GEV6F82",
+    "GGH2B82", "GHZ6J44", "GJH6A15", "GJZ0G32", "GKE7A62", "CQU8171", "FEF5415", "GGO7I32", "SVB0J83",
+    "SVG7B87", "SWT8D36", "DOC5312", "DOO8929", "EDL2544", "EZU1334", "CQU3A74", "CUJ1H32", "EXN9C84",
+    "GEZ2E14", "GJV3J83", "SSW8H30", "FEA3J07", "GAZ2F93", "GCB5D97", "GHS5I87", "FVO8E61", "DQZ3E01",
+    "GCF3E16", "GDC3B93", "GFE1G42", "SUE2D85", "SVV2G65", "BXZ8E24", "BYI3D16", "DWN9F02", "ECU6E19",
+    "FCR2F63", "FFN2H85", "FNY3J82", "FOK7D72", "FVT3E84", "FVY9B66", "FXP5C56", "GBL5C12", "EBG0652",
+    "EOS8251", "ERZ7192", "EXR6601", "FHS6635", "GFV8726", "SUB1G38", "SVL5B75", "SVL9E23", "SVQ0B02",
+    "SVV3F36"
+])
+
 # Função para calcular o tempo de utilização
 def calcular_tempo_utilizacao(row):
     try:
@@ -127,6 +163,8 @@ def index():
             try:
                 # Carregar o arquivo CSV
                 df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
+
+                df = df[df['Placa'].isin(placas_permitidas)]
 
                 # Exibir as colunas para depuração
                 print(f"Colunas no arquivo CSV: {df.columns.tolist()}")  # Adicionamos isso para depuração
