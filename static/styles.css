@@ -4,6 +4,9 @@ body {
 
 .central-card,  .table-card {
     transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    box-sahdow: 0px 4px 10px rgba90, 0, 0, 0.2); /* Pequena sombra para destacar */
+    border-radius: 8px; /* Bordas arredondadas */
+    margin-bottom: 20px; /* Espaçamento entre os cards */
 }
 
 .central-card:hover, .table-card:hover {
@@ -20,6 +23,7 @@ body {
 .table-card {
     text-align: center;
     margin: 0 auto;
+    padding: 20 px;
 }
 
 
