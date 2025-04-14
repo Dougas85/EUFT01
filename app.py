@@ -45,7 +45,7 @@ def calcular_euft(df, dias_uteis_mes):
         'Tempo Utilizacao': 'sum',
         'Distancia Percorrida': 'sum',
         'Lotacao Patrimonial': 'first',
-        'Unidade em Operacao': 'first'
+        'Unidade em Operaçao': 'first'
     }).reset_index()
 
     # Verificar a correção dos dados
