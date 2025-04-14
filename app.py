@@ -58,6 +58,7 @@ def calcular_euft(file):
 
     # Filtrando placas permitidas após o agrupamento
     df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
+    df_agrupado = df_agrupado[df_agrupado['DIA'] > datetime.now() - timedelta(days=30)] # Apenas dados dos últimos 30 dias
     
     return df_agrupado
 
@@ -183,6 +184,7 @@ def index():
                 # Carregar o arquivo CSV
                 df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
 
+                # Filtrando placas permitidas
                 df = df[df['Placa'].isin(placas_permitidas)]
 
                 # Exibir as colunas para depuração
@@ -192,7 +194,10 @@ def index():
                 if 'Data Partida' not in df.columns:
                     raise ValueError("Coluna 'Data Partida' não encontrada no arquivo.")
 
-                resultados_veiculo, erros = calcular_euft(df, 20)
+                # Calcular EUFT
+                resultados_veiculo, erros = calcular_euft(df)
+
+                # Exibir resultados
                 return render_template('index.html', resultados=resultados_veiculo.to_html(index=False, float_format="%.2f"), erros=erros.to_html(index=False, float_format="%.2f"))
             except Exception as e:
                 return f"Ocorreu um erro ao processar o arquivo: {e}"
@@ -200,3 +205,4 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5002)
+
