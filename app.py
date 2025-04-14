@@ -1,7 +1,8 @@
 import os
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, render_template, redirect
+
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -52,9 +53,10 @@ def process_file(file):
     df = df.drop(0) 
     return df
 
-def calcular_euft(file):
+def calcular_euft_de_arquivo(file):
     df = process_file(file)
-    df_agrupado = df.groupby(['Placa', 'DIA']).sum().reset_index()
+    df['DIA'] = pd.to_datetime(df['DIA'], errors='coerce')  # Garante que 'DIA' seja datetime
+    df_agrupado = df.groupby(['Placa', 'DIA']).sum(numeric_only=True).reset_index()
 
     # Filtrando placas permitidas após o agrupamento
     df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
