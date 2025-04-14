@@ -20,7 +20,7 @@ def calcular_tempo_utilizacao(row):
         raise ValueError(f"Erro ao converter data/hora: {e}")
     
     duracao = (retorno - partida).total_seconds() / 3600  # Converter para horas
-    if: row['Almoço'] == S:
+    if row['Almoço'] == S:
         duracao -= 1 #Subtrai 01 hora para intervalo de almoço
     return round(duracao, 2)  
     
