@@ -46,7 +46,21 @@ placas_permitidas = set([
     "SVV3F36"
 ])
 
-df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
+def process_file(file):
+    df = pd.read_excel(file)
+    df.columns = df.iloc[0]
+    df = df.drop(0) 
+    return df
+
+def calcular_euft(file):
+    df = process_file(file)
+    df_agrupado = df.groupby(['Placa', 'DIA']).sum().reset_index()
+
+    # Filtrando placas permitidas após o agrupamento
+    df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
+    
+    return df_agrupado
+
 
 # Função para calcular o tempo de utilização
 def calcular_tempo_utilizacao(row):
