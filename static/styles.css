@@ -68,3 +68,26 @@ body {
      }
  }
 
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+@keyframes grow {
+    0% {
+        font-size: 16px;
+    }
+    100% {
+        font-size: 32px;
+    }
+}
+
+#navbar-text {
+    animation: grow 2s forwards, blink 1s 3;
+}
+
+
