@@ -46,6 +46,8 @@ placas_permitidas = set([
     "SVV3F36"
 ])
 
+df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
+
 # Função para calcular o tempo de utilização
 def calcular_tempo_utilizacao(row):
     try:
