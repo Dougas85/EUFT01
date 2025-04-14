@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EUFT</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-   
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
 
@@ -26,47 +26,44 @@
         </div>
     </div>
 
-    {% if resultados %}
-        <button id="showResults" class="btn btn-info mt-4">Mostrar Resultados</button>
-        <div id="results" class="card table-card mt-3" style="display: none;">
-            <div class="card-header text-center">
-                <h4>Resultados</h4>
-            </div>
-            <div class="card-body">
-                <div class="result-item">
-                    <h5>Resultado 1</h5>
-                    <p>Descrição do resultado 1</p>
-                </div>
-                <div class="result-item">
-                    <h5>Resultado 2</h5>
-                    <p>Descrição do resultado 2</p>
-                </div>
-                <!-- Adicione mais resultados conforme necessário -->
-            </div>
-        </div>
-    {% endif %}
+    
+{% if resultados %}
+        <button id="showResults" class="btn btn-info mt-4">Mostrar Resultados</button>
+        <div id="results" class="card table-card mt-3" style="display: none;">
+            <div class="card-header text-center">
+                <h4>Resultados</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <tbody>
+                            {{ resultados|safe }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
-    {% if erros %}
-        <button id="showErrors" class="btn btn-danger mt-4">Mostrar Erros</button>
-        <div id="errors" class="card table-card mt-3" style="display: none;">
-            <div class="card-header text-center">
-                <h4>Erros</h4>
-            </div>
-            <div class="card-body">
-                <div class="error-item">
-                    <h5>Erro 1</h5>
-                    <p>Descrição do erro 1</p>
-                </div>
-                <div class="error-item">
-                    <h5>Erro 2</h5>
-                    <p>Descrição do erro 2</p>
-                </div>
-                <!-- Adicione mais erros conforme necessário -->
-            </div>
-        </div>
-    {% endif %}
+    {% if erros %}
+        <button id="showErrors" class="btn btn-danger mt-4">Mostrar Erros</button>
+        <div id="errors" class="card table-card mt-3" style="display: none;">
+            <div class="card-header text-center">
+                <h4>Erros</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <tbody>
+                            {{ erros|safe }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
-
+    
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container">
         <span class="text-muted">© 2025 GERAE PPE. Todos os direitos reservados.</span>
