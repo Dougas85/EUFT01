@@ -47,7 +47,7 @@ placas_permitidas = set([
 ])
 
 def process_file(file):
-    df = pd.read_excel(file)
+    df = pd.read_csv(file)
     df.columns = df.iloc[0]
     df = df.drop(0) 
     return df
@@ -102,6 +102,9 @@ def calcular_euft(df, dias_uteis_mes):
 
     df_agrupado['Tempo Utilizacao'] = pd.to_numeric(df_agrupado['Tempo Utilizacao'], errors='coerce')
     df_agrupado['Distancia Percorrida'] = pd.to_numeric(df_agrupado['Distancia Percorrida'], errors='coerce')
+
+    # Filtrar apenas as plcas permitidas
+    df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
 
     # Verificar a correção dos dados
 
