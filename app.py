@@ -82,7 +82,7 @@ def calcular_euft(df, dias_uteis_mes):
 
     # Motivo do erro
     def motivo_erro(row):
-        if row['Placa'] == 'placas_especificas':
+        if row['Placa'] == in placas_especificas:
             if not (1 <= row['Tempo Utilizacao'] <= 8):
                 return f"Tempo de Utilização fora do intervalo: {row['Tempo Utilizacao']} horas"
             if not (8 <= row['Distancia Percorrida'] <= 100):
