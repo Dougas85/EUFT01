@@ -54,7 +54,7 @@ def process_file(file):
     return df
 
 def calcular_euft_de_arquivo(file):
-   df = process_file(file)
+    df = process_file(file)
     df['DIA'] = pd.to_datetime(df['DIA'], errors='coerce')
     df_agrupado = df.groupby(['Placa', 'DIA']).sum(numeric_only=True).reset_index()
     df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
