@@ -42,8 +42,8 @@ def calcular_euft(df, dias_uteis_mes):
     # Agrupar por placa e data de partida, somando os tempos de utilização e distâncias percorridas
     df_agrupado = df.groupby(['Placa', 'Data de Partida']).agg({
         'Tempo Utilizacao': 'sum',
-        'Distancia Percorrida': 'sum'
-        'Lotacao Patrimonial': 'first'  # Adiciona a coluna Lotação Patrimonial
+        'Distancia Percorrida': 'sum',
+        'Lotacao Patrimonial': 'first',  # Adiciona a coluna Lotação Patrimonial
         'Unidade Operacional': 'first'   # Adiciona a coluna Unidade Operacional     
     }).reset_index()
 
