@@ -84,6 +84,7 @@ def formatar_tempo_horas_minutos(tempo):
 
 # Função principal para calcular o EUFT
 def calcular_euft(dias_uteis_mes, file):
+    df = process_file(file)
     df['Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y')
     df['Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y')
 
