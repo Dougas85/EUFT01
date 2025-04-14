@@ -54,16 +54,12 @@ def process_file(file):
     return df
 
 def calcular_euft_de_arquivo(file):
-    df = process_file(file)
-    df['DIA'] = pd.to_datetime(df['DIA'], errors='coerce')  # Garante que 'DIA' seja datetime
+   df = process_file(file)
+    df['DIA'] = pd.to_datetime(df['DIA'], errors='coerce')
     df_agrupado = df.groupby(['Placa', 'DIA']).sum(numeric_only=True).reset_index()
-
-    # Filtrando placas permitidas após o agrupamento
     df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_permitidas)]
-    df_agrupado = df_agrupado[df_agrupado['DIA'] > datetime.now() - timedelta(days=30)] # Apenas dados dos últimos 30 dias
-    
+    df_agrupado = df_agrupado[df_agrupado['DIA'] > datetime.now() - timedelta(days=30)]
     return df_agrupado
-
 
 # Função para calcular o tempo de utilização
 def calcular_tempo_utilizacao(row):
