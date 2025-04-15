@@ -155,6 +155,13 @@ def calcular_euft(df, dias_uteis_mes):
     return resultados_por_veiculo, df_agrupado_filtrado[df_agrupado_filtrado['Motivo Erro'] != '']
 
 
+import os
+import pandas as pd
+from flask import Flask, render_template, request, redirect
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'  # Defina seu diretório de upload
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -164,20 +171,35 @@ def index():
         if file.filename == '':
             return redirect(request.url)
         if file:
+            # Defina o caminho do arquivo carregado
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
+
             try:
+                # Lê o arquivo CSV
                 df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
+
+                # Verifica se a coluna 'Data Partida' existe
                 if 'Data Partida' not in df.columns:
                     raise ValueError("Coluna 'Data Partida' não encontrada no arquivo.")
+                
+                # Remover linhas com NaN nas colunas específicas
+                df = df.dropna(subset=['Data Retorno', 'Hora Retorno', 'Hod. Retorno'])
+
+                # Processamento de dados: não precisamos converter, só remover as linhas com NaN
+                # Agora podemos seguir com o cálculo dos resultados
                 resultados_veiculo, erros = calcular_euft(df, 20)
+
             except Exception as e:
                 return f"Ocorreu um erro ao processar o arquivo: {e}"
+
             # Remove colunas desnecessárias da tabela de erros
             if 'Tempo Utilizacao' in erros.columns:
                 erros = erros.drop(columns=['Tempo Utilizacao'])
             if 'Correto' in erros.columns:
                 erros = erros.drop(columns=['Correto'])
+
+            # Renderiza a página com os resultados e erros processados
             return render_template('index.html',
                                    resultados=resultados_veiculo.to_html(index=False, float_format="%.2f"),
                                    erros=erros.to_html(index=False, float_format="%.2f"))
