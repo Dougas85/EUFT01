@@ -135,7 +135,7 @@ def calcular_euft(df, dias_uteis_mes):
         return ''
 
     df_agrupado['Motivo Erro'] = df_agrupado.apply(motivo_erro, axis=1)
-    df_agrupado['Tempo Utilizacao Formatado'] = df_agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
+    df_agrupado['Tempo Utilizacao Total'] = df_agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
 
     # Filtrar apenas as placas analisadas
     df_agrupado_filtrado = df_agrupado[df_agrupado['Placa'].isin(placas_analisadas)]
