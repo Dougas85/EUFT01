@@ -103,5 +103,50 @@ body {
     animation: blink-animation 2s ease-in-out forwards;
 }
 
+/* Responsividade */
+@media (max-width: 1200px) {
+    .table {
+        max-width: 90%;
+    }
+}
 
+@media (max-width: 768px) {
+    .central-card, .table-card {
+        padding: 15px;
+    }
+
+    .table {
+        max-width: 100%;
+    }
+
+    .fade-in-slow {
+        font-size: 40px;
+    }
+
+    #euft-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .central-card, .table-card {
+        padding: 10px;
+    }
+
+    .table {
+        max-width: 100%;
+    }
+
+    .fade-in-slow {
+        font-size: 30px;
+    }
+
+    #euft-title {
+        font-size: 16px;
+    }
+
+    .btn-success {
+        padding: 8px 15px;
+    }
+}
 
