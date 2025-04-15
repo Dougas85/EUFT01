@@ -2,6 +2,8 @@ import os
 import pandas as pd
 from datetime import datetime
 from flask import Flask, request, render_template, redirect
+import tempfile
+from flask import send_file
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -135,7 +137,7 @@ def calcular_euft(df, dias_uteis_mes):
         return ''
 
     df_agrupado['Motivo Erro'] = df_agrupado.apply(motivo_erro, axis=1)
-    df_agrupado['Tempo Utilizacao Total'] = df_agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
+    df_agrupado['Tempo Utilizacao Formatado'] = df_agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
 
     # Filtrar apenas as placas analisadas
     df_agrupado_filtrado = df_agrupado[df_agrupado['Placa'].isin(placas_analisadas)]
@@ -153,7 +155,6 @@ def calcular_euft(df, dias_uteis_mes):
     )
 
     return resultados_por_veiculo, df_agrupado_filtrado[df_agrupado_filtrado['Motivo Erro'] != '']
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -192,10 +193,34 @@ def index():
             if 'Correto' in erros.columns:
                 erros = erros.drop(columns=['Correto'])
 
+            # Salvar como CSV
+            temp_csv_path = os.path.join(tempfile.gettempdir(), "erros_euft.csv")
+            erros.to_csv(temp_csv_path, index=False, sep=";", encoding='utf-8')
+
+            # Salvar como Excel (opcional)
+            temp_excel_path = os.path.join(tempfile.gettempdir(), "erros_euft.xlsx")
+            erros.to_excel(temp_excel_path, index=False)
+
+
+
             # Renderiza a página com os resultados e erros processados
             return render_template('index.html',
                                    resultados=resultados_veiculo.to_html(index=False, float_format="%.2f"),
-                                   erros=erros.to_html(index=False, float_format="%.2f"))
+                                   erros=erros.to_html(index=False, float_format="%.2f"),
+                                   link_csv='/download/erros_csv',
+                                   link_excel='/download/erros_excel')
+# Retorno padrão para requisição GET
+    return render_template('index.html')  
+   
+@app.route('/download/erros_csv')
+def download_erros_csv():
+    temp_csv_path = os.path.join(tempfile.gettempdir(), "erros_euft.csv")
+    return send_file(temp_csv_path, as_attachment=True, download_name="Erros_EUFT.csv")
+
+@app.route('/download/erros_excel')
+def download_erros_excel():
+    temp_excel_path = os.path.join(tempfile.gettempdir(), "erros_euft.xlsx")
+    return send_file(temp_excel_path, as_attachment=True, download_name="Erros_EUFT.xlsx")
             
     return render_template('index.html')
 
