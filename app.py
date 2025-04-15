@@ -155,13 +155,6 @@ def calcular_euft(df, dias_uteis_mes):
     return resultados_por_veiculo, df_agrupado_filtrado[df_agrupado_filtrado['Motivo Erro'] != '']
 
 
-import os
-import pandas as pd
-from flask import Flask, render_template, request, redirect
-
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'  # Defina seu diretório de upload
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
