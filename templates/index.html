@@ -10,7 +10,7 @@
 <body>
 
 <nav class="navbar navbar-light bg-light">
-    <span class="navbar-brand mx-auto">EUFT - Efetividade na Utilização da Frota</span>
+    <span id="euft-title" class="navbar-brand mx-auto">EUFT - Efetividade na Utilização da Frota</span>
 </nav>
 
 <div class="container mt-5">
@@ -47,6 +47,7 @@
 
     {% if erros %}
         <button id="showErrors" class="btn btn-danger mt-4">Mostrar Erros</button>
+<a id="baixarErros" href="/download_erros" style="display: none;" target="_blank"></a>
         <div id="errors" class="card table-card mt-3" style="display: none;">
             <div class="card-header text-center">
                 <h4>Erros</h4>
@@ -66,20 +67,62 @@
     
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container">
-        <span class="text-muted">© 2025 GERAE PPE. Todos os direitos reservados.</span>
+        <span class="text-muted">© DFS 2025. Todos os direitos reservados.</span>
     </div>
 </footer>
 
 <script>
-    document.getElementById('showResults').addEventListener('click', function() {
-        document.getElementById('results').style.display = 'block';
-        document.getElementById('errors').style.display = 'none';
-    });
+   document.addEventListener('DOMContentLoaded', function () {
+    const title = document.getElementById('euft-title');
+    if (title) {
+        // Fase 1: Título aparece devagar
+        title.classList.add('fade-in-slow');
 
-    document.getElementById('showErrors').addEventListener('click', function() {
-        document.getElementById('errors').style.display = 'block';
-        document.getElementById('results').style.display = 'none';
-    });
+        // Fase 2: Após o fade-in, ele pisca
+        setTimeout(() => {
+            title.classList.remove('fade-in-slow');
+            title.classList.add('blink');
+        }, 2000); // tempo do fade-in
+
+        // Fase 3: Após o piscar, ele se fixa visível
+        setTimeout(() => {
+            title.classList.remove('blink');
+            title.style.opacity = '1';
+        }, 4000); // tempo total = fade + blink
+    }
+
+    const btnShowResults = document.getElementById('showResults');
+    const btnShowErrors = document.getElementById('showErrors');
+
+    // Função para alternar a visibilidade da tabela
+    function toggleVisibility(elementId) {
+        const element = document.getElementById(elementId);
+        if (element.style.display === 'block') {
+            element.style.display = 'none';
+        } else {
+            element.style.display = 'block';
+        }
+    }
+
+    // Ao clicar no botão de resultados
+    if (btnShowResults) {
+        btnShowResults.addEventListener('click', function () {
+            toggleVisibility('results');
+            // Certifique-se de que a tabela de erros esteja oculta
+            document.getElementById('errors').style.display = 'none';
+        });
+    }
+
+    // Ao clicar no botão de erros
+    if (btnShowErrors) {
+        btnShowErrors.addEventListener('click', function () {
+            toggleVisibility('errors');
+            // Certifique-se de que a tabela de resultados esteja oculta
+            document.getElementById('results').style.display = 'none';
+        });
+    }
+});
+
 </script>
 
 </body>
