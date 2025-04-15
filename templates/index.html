@@ -6,6 +6,8 @@
     <title>EUFT</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Adicionando o CSS do DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
 </head>
 <body>
 
@@ -26,103 +28,141 @@
         </div>
     </div>
 
-    
-{% if resultados %}
-        <button id="showResults" class="btn btn-info mt-4">Mostrar Resultados</button>
-        <div id="results" class="card table-card mt-3" style="display: none;">
-            <div class="card-header text-center">
-                <h4>Resultados</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
-                        <tbody>
-                            {{ resultados|safe }}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+    {% if resultados %}
+        <button id="showResults" class="btn btn-info mt-4 d-block mx-auto">Mostrar Resultados</button>
+        <div id="results" class="card table-card mt-3" style="display: none;">
+            <div class="card-header text-center">
+                <h4>Resultados</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="resultsTable" class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Placa</th>
+                                <th>Data</th>
+                                <th>Tempo</th>
+                                <th>Distância</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ resultados|safe }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
-    {% if erros %}
-        <button id="showErrors" class="btn btn-danger mt-4">Mostrar Erros</button>
-<a id="baixarErros" href="/download_erros" style="display: none;" target="_blank"></a>
-        <div id="errors" class="card table-card mt-3" style="display: none;">
-            <div class="card-header text-center">
-                <h4>Erros</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
-                        <tbody>
-                            {{ erros|safe }}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+    {% if erros %}
+        <button id="showErrors" class="btn btn-danger mt-4 d-block mx-auto">Mostrar Erros</button>
+        <div id="botoesDownload" style="display: none;" class="mt-3 text-center">
+            <a href="/download/erros_csv" class="btn btn-success me-2" target="_blank">Baixar CSV</a>
+            <a href="/download/erros_excel" class="btn btn-primary" target="_blank">Baixar Excel</a>
+        </div>
+        <div id="errors" class="card table-card mt-3" style="display:none;">
+            <div class="card-header text-center">
+                <h4>Erros</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="errorsTable" class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Placa</th>
+                                <th>Motivo</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ erros|safe }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
-    
+
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container">
         <span class="text-muted">© DFS 2025. Todos os direitos reservados.</span>
     </div>
 </footer>
 
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- Adicionando o JS do DataTables -->
+<script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+
 <script>
-   document.addEventListener('DOMContentLoaded', function () {
-    const title = document.getElementById('euft-title');
-    if (title) {
-        // Fase 1: Título aparece devagar
-        title.classList.add('fade-in-slow');
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inicializando as tabelas do DataTables
+        $('#resultsTable').DataTable();
+        $('#errorsTable').DataTable();
 
-        // Fase 2: Após o fade-in, ele pisca
-        setTimeout(() => {
-            title.classList.remove('fade-in-slow');
-            title.classList.add('blink');
-        }, 2000); // tempo do fade-in
+        const title = document.getElementById('euft-title');
+        if (title) {
+            // Fase 1: Título aparece devagar
+            title.classList.add('fade-in-slow');
 
-        // Fase 3: Após o piscar, ele se fixa visível
-        setTimeout(() => {
-            title.classList.remove('blink');
-            title.style.opacity = '1';
-        }, 4000); // tempo total = fade + blink
-    }
+            // Fase 2: Após o fade-in, ele pisca
+            setTimeout(() => {
+                title.classList.remove('fade-in-slow');
+                title.classList.add('blink');
+            }, 2000); // tempo do fade-in
 
-    const btnShowResults = document.getElementById('showResults');
-    const btnShowErrors = document.getElementById('showErrors');
-
-    // Função para alternar a visibilidade da tabela
-    function toggleVisibility(elementId) {
-        const element = document.getElementById(elementId);
-        if (element.style.display === 'block') {
-            element.style.display = 'none';
-        } else {
-            element.style.display = 'block';
+            // Fase 3: Após o piscar, ele se fixa visível
+            setTimeout(() => {
+                title.classList.remove('blink');
+                title.style.opacity = '1';
+            }, 4000); // tempo total = fade + blink
         }
-    }
 
-    // Ao clicar no botão de resultados
-    if (btnShowResults) {
-        btnShowResults.addEventListener('click', function () {
-            toggleVisibility('results');
-            // Certifique-se de que a tabela de erros esteja oculta
-            document.getElementById('errors').style.display = 'none';
-        });
-    }
+        const btnShowResults = document.getElementById('showResults');
+        const btnShowErrors = document.getElementById('showErrors');
 
-    // Ao clicar no botão de erros
-    if (btnShowErrors) {
-        btnShowErrors.addEventListener('click', function () {
-            toggleVisibility('errors');
-            // Certifique-se de que a tabela de resultados esteja oculta
-            document.getElementById('results').style.display = 'none';
-        });
-    }
-});
+        // Função para alternar a visibilidade da tabela
+        function toggleVisibility(elementId) {
+            const element = document.getElementById(elementId);
+            if (element.style.display === 'block') {
+                element.style.display = 'none';
+            } else {
+                element.style.display = 'block';
+            }
+        }
 
+        // Ao clicar no botão de resultados
+        if (btnShowResults) {
+            btnShowResults.addEventListener('click', function () {
+                toggleVisibility('results');
+                // Certifique-se de que a tabela de erros esteja oculta
+                document.getElementById('errors').style.display = 'none';
+            });
+        }
+
+        // Ao clicar no botão de erros
+        if (btnShowErrors) {
+            btnShowErrors.addEventListener('click', function () {
+                toggleVisibility('errors');
+                // Certifique-se de que a tabela de resultados esteja oculta
+                document.getElementById('results').style.display = 'none';
+
+                const botoesDownload = document.getElementById('botoesDownload');
+                const errosDiv = document.getElementById('errors');
+
+                if (errosDiv.style.display === 'block') {
+                    botoesDownload.style.display = 'block';
+                } else {
+                    botoesDownload.style.display = 'none';
+                }
+            });
+        }
+    });
 </script>
 
 </body>
