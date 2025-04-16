@@ -49,14 +49,18 @@ body {
     background-color: #e9ecef;
 }
 
-.table th, .table td {
+/* .table th, .table td {
     text-align: center;
     vertical-align: middle;
-}
+}*/
+
+.table td {
+    text-align: center;
+    vertical-align: middle;
 
 .table th {
     font-weight: bold;
-    text-align: right !important;
+    text-align: right;
 }
 
 @keyframes fadeIn {
