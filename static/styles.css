@@ -138,6 +138,7 @@ body {
 @media (max-width: 480px) {
     .central-card, .table-card {
         padding: 10px;
+        width: 90%;
     }
 
     .table {
