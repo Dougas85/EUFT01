@@ -24,6 +24,9 @@ body {
     background-color: #28a745;
     border-color: #28a745;
 }
+.btn-custom {
+    width: 150px;
+}
 
 .footer {
     text-align: center;
