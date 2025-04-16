@@ -23,13 +23,13 @@
         <div class="card-body text-center">
             <form method="post" enctype="multipart/form-data">
                 <input type="file" class="form-control-file mb-3" name="file" title="Selecione um arquivo" placeholder="Selecione um arquivo">
-                <button type="submit" class="btn btn-outline-success">Carregar</button>
+                <button type="submit" class="btn btn-outline-success btn-custom">Carregar</button>
             </form>
         </div>
     </div>
 
     {% if resultados %}
-        <button id="showResults" class="btn btn-outline-info mt-4 d-block mx-auto">Mostrar Resultados</button>
+        <button id="showResults" class="btn btn-outline-info mt-4 d-block mx-auto btn-custom">Mostrar Resultados</button>
         <div id="results" class="card table-card mt-3" style="display: none;">
             <div class="card-header text-center">
                 <h4>Resultados</h4>
@@ -56,10 +56,10 @@
     {% endif %}
 
     {% if erros %}
-        <button id="showErrors" class="btn btn-outline-danger mt-4 d-block mx-auto">Mostrar Erros</button>
+        <button id="showErrors" class="btn btn-outline-danger mt-4 d-block mx-auto btn-custom">Mostrar Erros</button>
         <div id="botoesDownload" style="display: none;" class="mt-3 text-center">
-            <a href="/download/erros_csv" class="btn btn-outline-success me-2" target="_blank">Baixar CSV</a>
-            <a href="/download/erros_excel" class="btn btn-outline-primary" target="_blank">Baixar Excel</a>
+            <a href="/download/erros_csv" class="btn btn-outline-success me-2 btn-custom" target="_blank">Baixar CSV</a>
+            <a href="/download/erros_excel" class="btn btn-outline-primary btn-custom" target="_blank">Baixar Excel</a>
         </div>
         <div id="errors" class="card table-card mt-3" style="display:none;">
             <div class="card-header text-center">
