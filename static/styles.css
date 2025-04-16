@@ -59,7 +59,7 @@ body {
 
 .table th {
     font-weight: bold;
-    text-align: right !important;
+    text-align: left !important;
 }
 
 @keyframes fadeIn {
