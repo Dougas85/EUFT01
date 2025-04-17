@@ -38,6 +38,11 @@ def formatar_tempo_horas_minutos(tempo):
         return f"{horas}h {minutos}m"
     return tempo
 
+placas_scudo = {
+    'SWQ1J54', 'SUY7J13', 'SWN1E65', 'SVB0J83', 'SVG7B87', 'SWT8D36', 'SUB1G38',
+    'SVL5B75', 'SVL9E23', 'SVQ0B02', 'SVV3F36'
+}
+
 # Lista de placas específicas
 placas_especificas = {
     'BYY6C91', 'SSV9F54', 'SSW2J17', 'SSX2G21', 'SVD6C35', 'FTP6G23', 'GEO4A61', 'STU4F87',
@@ -117,25 +122,36 @@ def calcular_euft(df, dias_uteis_mes):
     df_agrupado['Distancia Percorrida'] = pd.to_numeric(df_agrupado['Distancia Percorrida'], errors='coerce')
 
     def verificar_corretude(row):
-        if row['Placa'] in placas_especificas:
+        if row['Placa'] in placas_scudo:  # Para as placas SCUDO
+            return 1 <= row['Tempo Utilizacao'] <= 8 and 8 <= row['Distancia Percorrida'] <= 120
+        elif row['Placa'] in placas_especificas:  # Para as placas específicas
             return 1 <= row['Tempo Utilizacao'] <= 8 and 8 <= row['Distancia Percorrida'] <= 100
+    # Para as outras placas
         return 2 <= row['Tempo Utilizacao'] <= 8 and 6 <= row['Distancia Percorrida'] <= 80
 
+# Aplicando a função ao DataFrame
     df_agrupado['Correto'] = df_agrupado.apply(verificar_corretude, axis=1)
 
+
     def motivo_erro(row):
-        if row['Placa'] in placas_especificas:
+        if row['Placa'] in placas_scudo:  # Para as placas SCUDO
+            if not (1 <= row['Tempo Utilizacao'] <= 8):
+                return f"Tempo de Utilização fora do intervalo (SCUDO): {row['Tempo Utilizacao']} horas"
+            if not (8 <= row['Distancia Percorrida'] <= 120):
+                return f"Distância Percorrida fora do intervalo (SCUDO): {row['Distancia Percorrida']} km"
+        elif row['Placa'] in placas_especificas:  # Para as placas específicas
             if not (1 <= row['Tempo Utilizacao'] <= 8):
                 return f"Tempo de Utilização fora do intervalo: {row['Tempo Utilizacao']} horas"
             if not (8 <= row['Distancia Percorrida'] <= 100):
                 return f"Distância Percorrida fora do intervalo: {row['Distancia Percorrida']} km"
-        else:
+        else:  # Para as outras placas
             if not (2 <= row['Tempo Utilizacao'] <= 8):
                 return f"Tempo de Utilização fora do intervalo: {row['Tempo Utilizacao']} horas"
             if not (6 <= row['Distancia Percorrida'] <= 80):
                 return f"Distância Percorrida fora do intervalo: {row['Distancia Percorrida']} km"
-        return ''
+        return ''  # Se tudo estiver correto, retorna uma string vazia
 
+# Aplicando a função ao DataFrame
     df_agrupado['Motivo Erro'] = df_agrupado.apply(motivo_erro, axis=1)
     df_agrupado['Tempo Utilizacao Formatado'] = df_agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
 
@@ -145,13 +161,13 @@ def calcular_euft(df, dias_uteis_mes):
     resultados_por_veiculo = df_agrupado_filtrado.groupby('Placa').agg(
         Dias_Corretos=('Correto', 'sum'),
         Dias_Totais=('Placa', 'count')
-    ).reset_index()
+        ).reset_index()
 
     resultados_por_veiculo['Adicional'] = resultados_por_veiculo['Dias_Totais'].apply(
         lambda x: max(0, 18 - x) if x < 18 else 0
     )
     resultados_por_veiculo['EUFT'] = resultados_por_veiculo['Dias_Corretos'] / (
-        resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional']
+    resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional']
     )
 
     return resultados_por_veiculo, df_agrupado_filtrado[df_agrupado_filtrado['Motivo Erro'] != '']
