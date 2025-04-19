@@ -200,6 +200,9 @@ def index():
                 # Agora podemos seguir com o cálculo dos resultados
                 resultados_veiculo, erros = calcular_euft(df, 20)
 
+                print(resultados_veiculo.columns)
+
+
             except Exception as e:
                 return f"Ocorreu um erro ao processar o arquivo: {e}"
 
@@ -218,13 +221,33 @@ def index():
             erros.to_excel(temp_excel_path, index=False)
 
 
+            # Gera as linhas da tabela de resultados
+            resultados_html = ""
+            for i, row in resultados_veiculo.iterrows():
+                resultados_html += f"<tr><td>{i+1}</td><td>{row['Placa']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{row['EUFT']:.2f}</td></tr>"
 
+            # Gera as linhas da tabela de erros
+            erros_html = ""
+            for i, row in erros.iterrows():
+                erros_html += f"<tr><td>{i+1}</td><td>{row['Placa']}</td><td>{row['Data Partida']}</td><td>{row['Distancia Percorrida']}</td><td>{row['Lotacao Patrimonial']}</td><td>{row['Unidade em Operação']}</td><td>{row['Motivo Erro']}</td><td>{row['Tempo Utilizacao Formatado']}</td></tr>"
+            # Agrupa os erros por unidade
+            impacto_unidade = erros.groupby('Unidade em Operação').size().reset_index(name='Qtd_Erros')
+            impacto_unidade.columns = ['Unidade', 'Qtd_Erros']
+
+            # Gera os dados para o gráfico
+            labels = impacto_unidade['Unidade'].tolist()
+            valores = impacto_unidade['Qtd_Erros'].tolist()
+            
             # Renderiza a página com os resultados e erros processados
+            import json
             return render_template('index.html',
-                                   resultados=resultados_veiculo.to_html(index=False, float_format="%.2f"),
-                                   erros=erros.to_html(index=False, float_format="%.2f"),
-                                   link_csv='/download/erros_csv',
-                                   link_excel='/download/erros_excel')
+                       resultados=resultados_html,
+                       erros=erros_html,
+                       grafico_labels=json.dumps(labels),
+                       grafico_dados=json.dumps(valores),
+                       link_csv='/download/erros_csv',
+                       link_excel='/download/erros_excel')
+
 # Retorno padrão para requisição GET
     return render_template('index.html')  
    
