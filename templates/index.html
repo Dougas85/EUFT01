@@ -38,6 +38,9 @@
         {% if grafico_labels and grafico_dados %}
             <button id="showGrafico" class="btn btn-outline-warning btn-custom mx-1 mb-2">Mostrar Gráfico</button>
         {% endif %}
+        {% if veiculos_sem_saida %}
+            <button id="btnShowVeiculos" class="btn btn-outline-warning btn-custom mx-1 mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#semSaida" aria-expanded="false" aria-controls="semSaida">Mostrar Veículos Sem Saída</button>
+        {% endif %}
     </div>
 {% endif %}
 
@@ -59,7 +62,7 @@
                                 <th>EUFT</th>
                             </tr>
                         </thead>
-                        <tbody> 
+                        <tbody>
                             {{ resultados|safe }}
                         </tbody>
                     </table>
@@ -100,6 +103,33 @@
             </div>
         </div>
     {% endif %}
+
+    {% if veiculos_sem_saida %}
+<!-- Tabela dos veículos sem saída com colapso -->
+    <div id="semSaida" class="collapse card table-card mt-3">
+        <div class="card-header text-center">
+            <h4>Veículos Sem Saída Registrada</h4>
+        </div>
+        <div class="card-body">
+            <div class="responsive-table-container">
+                <table id="semSaidaTable" class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Placa</th>
+                            <th>Lotacao Patrimonial</th>
+                            <th>Unidade em Operação</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ veiculos_sem_saida|safe }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     {% if grafico_labels and grafico_dados %}
     <div id="graficoContainer" class="card table-card mt-3" style="display: none;">
         <div class="card-header text-center">
@@ -110,8 +140,8 @@
         </div>
     </div>
     {% endif %}
-    
-</div>
+
+    </div>
 
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container">
@@ -136,6 +166,7 @@
 <script>
     let resultsTableInitialized = false;
     let errorsTableInitialized = false;
+    let veiculosTableInitialized = false;
     let chartInstance = null;
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -155,6 +186,7 @@
         const btnShowResults = document.getElementById('showResults');
         const btnShowErrors = document.getElementById('showErrors');
         const btnShowGrafico = document.getElementById('showGrafico');
+        const btnShowVeiculos = document.getElementById('btnShowVeiculos');
 
         function toggleVisibility(elementId) {
             const element = document.getElementById(elementId);
@@ -191,6 +223,20 @@
                 if (!errorsTableInitialized) {
                     $('#errorsTable').DataTable();
                     errorsTableInitialized = true;
+                }
+            });
+        }
+
+        if(btnShowVeiculos) {
+            btnShowVeiculos.addEventListener('click', function () {
+                toggleVisibility('semSaida');
+                document.getElementById('results').style.display = 'none';
+                document.getElementById('errors').style.display = 'none';
+                document.getElementById('graficoContainer').style.display = 'none';
+
+                if(!veiculosTableInitialized) {
+                    $('#semSaidaTable').DataTable();
+                    veiculosTableInitialized = true;
                 }
             });
         }
@@ -255,6 +301,7 @@
             });
         }
     });
+
 </script>
 </body>
 </html>
