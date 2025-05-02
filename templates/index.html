@@ -31,11 +31,11 @@
                         <option value="Região 2">GERAE 02</option>
                     </select>
                 </div>
-                <div class="mb-3 w-50 position-relative">
+                <div class="col-md-6 col-12 mb-3">
                     
                     <input type="file" name="file" class="form-control form-control-lg ps-5 text-center rounded-pill border-primary" required>
                 </div>
-                <div class="mb-3 w-50">
+                <div class="col-md-6 col-12 mb-3">
                     <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill">Carregar</button>
                 </div>
             </form>
@@ -73,6 +73,7 @@
                     <tr>
                         <th>#</th>
                         <th>Placa</th>
+                        <th>Lotação Patrimonial</th>
                         <th>Dias Corretos</th>
                         <th>Dias Totais</th>
                         <th>Adicional</th>
@@ -81,6 +82,33 @@
                 </thead>
                 <tbody>
                     {{ resultados|safe }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Resultados por Unidade -->
+{% if resultados_por_unidade %}
+<div id="unidadeResults" class="card table-card mt-3">
+    <div class="card-header text-center">
+    </div>
+    <div class="card-body">
+        <div class="responsive-table-container">
+            <table id="unidadeResultsTable" class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Lotação Patrimonial</th>
+                        <th>Dias Corretos</th>
+                        <th>Dias Totais</th>
+                        <th>Adicional</th>
+                        <th>EUFT Médio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ resultados_por_unidade|safe }}
                 </tbody>
             </table>
         </div>
@@ -167,7 +195,6 @@
         <span class="text-muted">© DFS 2025. Todos os direitos reservados.</span>
     </div>
 </footer>
-
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script> 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
@@ -176,7 +203,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-
 
 {% if grafico_labels and grafico_dados %}
 <script id="grafico-data" type="application/json">
@@ -192,15 +218,16 @@
         let resultsTableInitialized = false;
         let errorsTableInitialized = false;
         let semSaidaTableInitialized = false;
+        let unidadeTableInitialized = false;
         let chartInstance = null;
-    
+
         function toggleVisibility(showId) {
             const ids = ['results', 'errors', 'graficoContainer', 'veiculosSemSaida'];
             ids.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = (id === showId && el.style.display !== 'block') ? 'block' : 'none';
             });
-    
+
             const botoesDownload = document.getElementById('botoesDownload');
             if (showId === 'errors' && document.getElementById('errors').style.display === 'block') {
                 botoesDownload.style.display = 'block';
@@ -208,22 +235,45 @@
                 botoesDownload.style.display = 'none';
             }
         }
-    
+
         const btnShowResults = document.getElementById('showResults');
         const btnShowErrors = document.getElementById('showErrors');
         const btnShowGrafico = document.getElementById('showGrafico');
         const btnShowVeiculosSemSaida = document.getElementById('showVeiculosSemSaida');
-    
+        
         if (btnShowResults) {
             btnShowResults.addEventListener('click', () => {
                 toggleVisibility('results');
-                if (!resultsTableInitialized) {
-                    $('#resultsTable').DataTable();
+
+                if (!resultsTableInitialized && $('#resultsTable').length) {
+                    $('#resultsTable').DataTable({
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                        },
+                        paging: true,
+                        searching: true,
+                        ordering: true,
+                        order: [[1, 'asc']] // Ordena por Placa
+                    });
                     resultsTableInitialized = true;
+                }
+
+                if (!unidadeTableInitialized && $('#unidadeResultsTable').length) {
+                    console.log('Inicializando unidadeResultsTable');
+                    $('#unidadeResultsTable').DataTable({
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                        },
+                        paging: true,
+                        searching: true,
+                        ordering: true,
+                        order: [[1, 'asc']] // Ordena por Lotação Patrimonial
+                    });
+                    unidadeTableInitialized = true;
                 }
             });
         }
-    
+        
         if (btnShowErrors) {
             btnShowErrors.addEventListener('click', () => {
                 toggleVisibility('errors');
@@ -233,7 +283,7 @@
                 }
             });
         }
-    
+
         if (btnShowVeiculosSemSaida) {
             btnShowVeiculosSemSaida.addEventListener('click', () => {
                 toggleVisibility('veiculosSemSaida');
@@ -243,7 +293,7 @@
                 }
             });
         }
-    
+
         if (btnShowGrafico) {
             btnShowGrafico.addEventListener('click', () => {
                 toggleVisibility('graficoContainer');
@@ -281,7 +331,6 @@
                                     hoverBackgroundColor: null,
                                     hoverBorderColor: null
                                 }
-                            
                             },
                             onHover: function (event, chartElement) {
                                 if (chartElement.length > 0) {
@@ -339,7 +388,6 @@
             });
         }
     });
-    </script>
-    
+</script>
 </body>
 </html>
