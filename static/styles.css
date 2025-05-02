@@ -41,7 +41,7 @@ body {
 /* Cards com animação suave */
 .card.central-card,
 .table-card {
-    max-width: 950px;
+    max-width: 965px;
     margin: 0 auto;
     border-radius: 25px;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
@@ -288,3 +288,28 @@ table tbody tr:hover {
 #graficoImpacto {
     height: 400px !important;
 }
+
+/* Ajuste responsivo para botões e selects em telas pequenas */
+@media (max-width: 576px) {
+    .btn,
+    .btn-custom,
+    select.form-select {
+        width: 100% !important;
+        max-width: 100%;
+        font-size: 0.9rem;
+        padding: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-custom {
+        padding: 10px 15px;
+    }
+
+    .form-group,
+    .form-select {
+        margin-bottom: 10px;
+    }
+}
+
