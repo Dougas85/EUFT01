@@ -66,75 +66,50 @@ def verificar_placas_sem_saida(df_original, placas_analisadas):
     placas_sem_saida = placas_analisadas - placas_com_saida
     return sorted(placas_sem_saida)
 
-
-# Função para calcular EUFT
+# Função para calcular EUFT com soma diária por placa
 def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_mobi, placas_analisadas, placas_to_lotacao):
-
     df['Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y')
     df['Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y')
 
-    # Normalizar placas
     df['Placa'] = df['Placa'].str.strip().str.upper()
 
-    # Calcular tempo e distância
     df['Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
     df['Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
 
-    # Agrupar por placa e data
-    df_agrupado = df.groupby(['Placa', 'Data Partida']).agg({
+    # Agrupamento por placa e data para soma diária
+    agrupado = df.groupby(['Placa', 'Data Partida']).agg({
         'Tempo Utilizacao': 'sum',
         'Distancia Percorrida': 'sum',
         'Lotacao Patrimonial': 'first',
         'Unidade em Operação': 'first'
     }).reset_index()
 
-    df_agrupado['Tempo Utilizacao'] = pd.to_numeric(df_agrupado['Tempo Utilizacao'], errors='coerce')
-    df_agrupado['Distancia Percorrida'] = pd.to_numeric(df_agrupado['Distancia Percorrida'], errors='coerce')
-
+    # Função para validar corretude da soma diária
     def verificar_corretude(row):
-        if row['Placa'] in placas_scudo:  # Para as placas SCUDO
-            return 1 <= row['Tempo Utilizacao'] <= 8 and 10 <= row['Distancia Percorrida'] <= 120
-        elif row['Placa'] in placas_especificas:  # Para as placas específicas
-            return 1 <= row['Tempo Utilizacao'] <= 8 and 8 <= row['Distancia Percorrida'] <= 100
-        elif row['Placa'] in placas_mobi:  # Para as placas específicas
-            return 1 <= row['Tempo Utilizacao'] <= 8 and 6 <= row['Distancia Percorrida'] <= 80
-        # Para as outras placas
-        return 2 <= row['Tempo Utilizacao'] <= 8 and 6 <= row['Distancia Percorrida'] <= 80
+        tempo = row['Tempo Utilizacao']
+        dist = row['Distancia Percorrida']
+        placa = row['Placa']
 
-    # Aplicando a função ao DataFrame
-    df_agrupado['Correto'] = df_agrupado.apply(verificar_corretude, axis=1)
+        if placa in placas_scudo:
+            return 1 <= tempo <= 8 and 10 <= dist <= 120
+        elif placa in placas_especificas:
+            return 1 <= tempo <= 8 and 8 <= dist <= 100
+        elif placa in placas_mobi:
+            return 1 <= tempo <= 8 and 6 <= dist <= 80
+        else:
+            return 2 <= tempo <= 8 and 6 <= dist <= 80
 
-    def motivo_erro(row):
-        if row['Placa'] in placas_scudo:  # Para as placas SCUDO
-            if not (1 <= row['Tempo Utilizacao'] <= 8):
-                return f"Tempo de Utilização fora do intervalo (SCUDO): {row['Tempo Utilizacao']} horas"
-            if not (10 <= row['Distancia Percorrida'] <= 120):
-                return f"Distância Percorrida fora do intervalo (SCUDO): {row['Distancia Percorrida']} km"
-        elif row['Placa'] in placas_especificas:  # Para as placas específicas
-            if not (1 <= row['Tempo Utilizacao'] <= 8):
-                return f"Tempo de Utilização fora do intervalo (FIORINO): {row['Tempo Utilizacao']} horas"
-            if not (8 <= row['Distancia Percorrida'] <= 100):
-                return f"Distância Percorrida fora do intervalo (FIORINO): {row['Distancia Percorrida']} km"
-        elif row['Placa'] in placas_mobi:  # Para as placas específicas
-            if not (1 <= row['Tempo Utilizacao'] <= 8):
-                return f"Tempo de Utilização fora do intervalo (MOBI): {row['Tempo Utilizacao']} horas"
-            if not (6 <= row['Distancia Percorrida'] <= 80):
-                return f"Distância Percorrida fora do intervalo (MOBI): {row['Distancia Percorrida']} km"
-        else:  # Para as outras placas
-            if not (2 <= row['Tempo Utilizacao'] <= 8):
-                return f"Tempo de Utilização fora do intervalo: {row['Tempo Utilizacao']} horas"
-            if not (6 <= row['Distancia Percorrida'] <= 80):
-                return f"Distância Percorrida fora do intervalo: {row['Distancia Percorrida']} km"
-        return ''  # Se tudo estiver correto, retorna uma string vazia
+    # Aplica verificação no DataFrame agrupado por dia
+    agrupado['Correto'] = agrupado.apply(verificar_corretude, axis=1)
 
-    # Aplicando a função ao DataFrame
-    df_agrupado['Motivo Erro'] = df_agrupado.apply(motivo_erro, axis=1)
-    df_agrupado['Tempo Utilizacao Formatado'] = df_agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
+    # Junta o resultado de corretude de volta no DataFrame original
+    df = df.merge(agrupado[['Placa', 'Data Partida', 'Correto']], on=['Placa', 'Data Partida'], how='left')
 
     # Filtrar apenas as placas analisadas
-    df_agrupado_filtrado = df_agrupado[df_agrupado['Placa'].isin(placas_analisadas)]
+    df_filtrado = df[df['Placa'].isin(placas_analisadas)]
 
-    resultados_por_veiculo = df_agrupado_filtrado.groupby('Placa').agg(
+    # Cálculo por veículo (com base em número de lançamentos, não dias)
+    resultados_por_veiculo = df_filtrado.groupby('Placa').agg(
         Dias_Corretos=('Correto', 'sum'),
         Dias_Totais=('Placa', 'count')
     ).reset_index()
@@ -142,11 +117,48 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
     resultados_por_veiculo['Adicional'] = resultados_por_veiculo['Dias_Totais'].apply(
         lambda x: max(0, 18 - x) if x < 18 else 0
     )
+
     resultados_por_veiculo['EUFT'] = resultados_por_veiculo['Dias_Corretos'] / (
-            resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional']
+        resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional']
     )
 
-    return resultados_por_veiculo, df_agrupado_filtrado[df_agrupado_filtrado['Motivo Erro'] != '']
+    # Motivo do erro baseado na soma diária
+    def motivo_erro(row):
+        if row['Correto']:
+            return ''
+        placa = row['Placa']
+        tempo = row['Tempo Utilizacao']
+        dist = row['Distancia Percorrida']
+
+        if placa in placas_scudo:
+            if not (1 <= tempo <= 8):
+                return f"Tempo fora do intervalo (SCUDO): {tempo:.1f}h"
+            if not (10 <= dist <= 120):
+                return f"Distância fora do intervalo (SCUDO): {dist:.1f}km"
+        elif placa in placas_especificas:
+            if not (1 <= tempo <= 8):
+                return f"Tempo fora do intervalo (FIORINO): {tempo:.1f}h"
+            if not (8 <= dist <= 100):
+                return f"Distância fora do intervalo (FIORINO): {dist:.1f}km"
+        elif placa in placas_mobi:
+            if not (1 <= tempo <= 8):
+                return f"Tempo fora do intervalo (MOBI): {tempo:.1f}h"
+            if not (6 <= dist <= 80):
+                return f"Distância fora do intervalo (MOBI): {dist:.1f}km"
+        else:
+            if not (2 <= tempo <= 8):
+                return f"Tempo fora do intervalo: {tempo:.1f}h"
+            if not (6 <= dist <= 80):
+                return f"Distância fora do intervalo: {dist:.1f}km"
+        return 'Erro não identificado'
+
+    agrupado['Motivo Erro'] = agrupado.apply(motivo_erro, axis=1)
+    agrupado['Tempo Utilizacao Formatado'] = agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
+
+    # Filtra agrupado apenas com erros para exibição
+    df_erros = agrupado[(agrupado['Placa'].isin(placas_analisadas)) & (agrupado['Motivo Erro'] != '')]
+
+    return resultados_por_veiculo, df_erros
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -237,9 +249,33 @@ def index():
                 erros = erros.drop(columns=['Correto'])
 
             # Montando o HTML para exibição dos resultados
+            
             resultados_html = ""
+            resultados_veiculo['lotacao_patrimonial'] = resultados_veiculo['Placa'].map(placas_to_lotacao)
             for i, row in resultados_veiculo.iterrows():
-                resultados_html += f"<tr><td>{i + 1}</td><td>{row['Placa']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{row['EUFT']:.2f}</td></tr>"
+                resultados_html += f"<tr><td>{i + 1}</td><td>{row['Placa']}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{row['EUFT']:.2f}</td></tr>"
+
+            # Agrupar os resultados por unidade (lotação patrimonial)
+            resultados_por_unidade = resultados_veiculo.groupby('lotacao_patrimonial').agg({
+                'Dias_Corretos': 'sum',
+                'Dias_Totais': 'sum',
+                'Adicional': 'sum',
+                'EUFT': 'mean'
+            }).reset_index()
+
+            # Ordenar opcionalmente por EUFT médio
+            resultados_por_unidade = resultados_por_unidade.sort_values(by='EUFT', ascending=False)
+
+            # Criar a tabela HTML de resultados por unidade
+            resultados_html += "<h3 class='mt-4'>Resultados</h3>"
+            resultados_html += "<table id='unidadeTable' class='table table-bordered table-striped mt-2'>"
+
+            resultados_html += "<thead><tr><th>#</th><th>Lotação Patrimonial</th><th>Dias Corretos</th><th>Dias Totais</th><th>Adicional</th><th>EUFT Médio</th></tr></thead><tbody>"
+
+            for i, row in resultados_por_unidade.iterrows():
+                resultados_html += f"<tr><td>{i + 1}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{row['EUFT']:.2f}</td></tr>"
+
+            resultados_html += "</tbody></table>"
 
             erros_html = ""
             for i, row in erros.iterrows():
