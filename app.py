@@ -64,11 +64,13 @@ def verificar_placas_sem_saida(df_original, placas_analisadas):
 
 # Calcular EUFT
 def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_mobi, placas_analisadas, placas_to_lotacao):
-    df['Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y')
-    df['Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y')
-    df['Placa'] = df['Placa'].str.strip().str.upper()
-    df['Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
-    df['Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
+    df = df.copy()
+    
+    df.loc[:, 'Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y')
+    df.loc[:, 'Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y')
+    df.loc[:, 'Placa'] = df['Placa'].str.strip().str.upper()
+    df.loc[:, 'Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
+    df.loc[:, 'Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
 
     agrupado = df.groupby(['Placa', 'Data Partida']).agg({
         'Tempo Utilizacao': 'sum',
