@@ -149,7 +149,7 @@ def calcular_euft(df, dias_uteis_mes,
     ).reset_index()
 
     resultados_por_veiculo['Adicional'] = resultados_por_veiculo['Dias_Totais'].apply(
-        lambda x: max(0, dias_uteis_mes - x) if x < dias_uteis_mes else 0
+        lambda x: max(0, 18 - x) if x < 18 else 0
     )
     resultados_por_veiculo['EUFT'] = (
         resultados_por_veiculo['Dias_Corretos'] /
