@@ -2,9 +2,7 @@ import os
 import pandas as pd
 import json
 from datetime import datetime
-from flask import Flask, request, render_template, redirect, flash, url_for, session
-import tempfile
-from flask import send_file
+from flask import Flask, request, render_template, redirect, flash, url_for, session, send_file
 from placas import placas_scudo2, placas_scudo7, placas_analisadas2, placas_analisadas7, placas_especificas2, placas_especificas7, placas_mobi2, placas_mobi7, placas_to_lotacao2, placas_to_lotacao7
 
 app = Flask(__name__)
@@ -16,40 +14,39 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Criar diretório de uploads, se não existir
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-
 regioes = {
-        'Região 2': {
-            'placas_scudo': placas_scudo2,
-            'placas_analisadas': placas_analisadas2,
-            'placas_especificas': placas_especificas2,
-            'placas_mobi': placas_mobi2,
-            'placas_to_lotacao': placas_to_lotacao2
-        },
-        'Região 7': {
-            'placas_scudo': placas_scudo7,
-            'placas_analisadas': placas_analisadas7,
-            'placas_especificas': placas_especificas7,
-            'placas_mobi': placas_mobi7,
-            'placas_to_lotacao': placas_to_lotacao7
-        }
+    'Região 2': {
+        'placas_scudo': placas_scudo2,
+        'placas_analisadas': placas_analisadas2,
+        'placas_especificas': placas_especificas2,
+        'placas_mobi': placas_mobi2,
+        'placas_to_lotacao': placas_to_lotacao2
+    },
+    'Região 7': {
+        'placas_scudo': placas_scudo7,
+        'placas_analisadas': placas_analisadas7,
+        'placas_especificas': placas_especificas7,
+        'placas_mobi': placas_mobi7,
+        'placas_to_lotacao': placas_to_lotacao7
     }
+}
+
 # Função para calcular o tempo de utilização
 def calcular_tempo_utilizacao(row):
     try:
         partida = datetime.strptime(f"{row['Data Partida'].date()} {row['Hora Partida']}", "%Y-%m-%d %H:%M")
-        if pd.isna(row['Data Retorno']) or pd.isna(row['Hora Retorno']):  # Caso não haja retorno
+        if pd.isna(row['Data Retorno']) or pd.isna(row['Hora Retorno']):
             return 'Veículo sem retorno registrado'
         retorno = datetime.strptime(f"{row['Data Retorno'].date()} {row['Hora Retorno']}", "%Y-%m-%d %H:%M")
     except Exception as e:
         raise ValueError(f"Erro ao converter data/hora: {e}")
 
-    duracao = (retorno - partida).total_seconds() / 3600  # Converter para horas
-    if row['Almoço?'] == 'S':  # Se teve intervalo de almoço
-        duracao -= 1  # Subtrai 1 hora para intervalo de almoço
+    duracao = (retorno - partida).total_seconds() / 3600
+    if row['Almoço?'] == 'S':
+        duracao -= 1
     return round(duracao, 2)
 
-
-# Função para formatar o tempo em horas e minutos
+# Formatar o tempo em horas e minutos
 def formatar_tempo_horas_minutos(tempo):
     if isinstance(tempo, (int, float)):
         horas = int(tempo)
@@ -57,26 +54,20 @@ def formatar_tempo_horas_minutos(tempo):
         return f"{horas}h {minutos}m"
     return tempo
 
-# Função para verificar placas sem saída
+# Verificar placas sem saída
 def verificar_placas_sem_saida(df_original, placas_analisadas):
-    # Filtra apenas placas que têm registro de saída (Data Partida preenchida)
     placas_com_saida = set(df_original[df_original['Data Partida'].notna()]['Placa'].unique())
-
-    # Compara com a lista de placas analisadas
     placas_sem_saida = placas_analisadas - placas_com_saida
     return sorted(placas_sem_saida)
 
-# Função para calcular EUFT com soma diária por placa
+# Calcular EUFT
 def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_mobi, placas_analisadas, placas_to_lotacao):
     df['Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y')
     df['Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y')
-
     df['Placa'] = df['Placa'].str.strip().str.upper()
-
     df['Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
     df['Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
 
-    # Agrupamento por placa e data para soma diária
     agrupado = df.groupby(['Placa', 'Data Partida']).agg({
         'Tempo Utilizacao': 'sum',
         'Distancia Percorrida': 'sum',
@@ -84,12 +75,10 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
         'Unidade em Operação': 'first'
     }).reset_index()
 
-    # Função para validar corretude da soma diária
     def verificar_corretude(row):
         tempo = row['Tempo Utilizacao']
         dist = row['Distancia Percorrida']
         placa = row['Placa']
-
         if placa in placas_scudo:
             return 1 <= tempo <= 8 and 10 <= dist <= 120
         elif placa in placas_especificas:
@@ -99,16 +88,10 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
         else:
             return 2 <= tempo <= 8 and 6 <= dist <= 80
 
-    # Aplica verificação no DataFrame agrupado por dia
     agrupado['Correto'] = agrupado.apply(verificar_corretude, axis=1)
-
-    # Junta o resultado de corretude de volta no DataFrame original
     df = df.merge(agrupado[['Placa', 'Data Partida', 'Correto']], on=['Placa', 'Data Partida'], how='left')
-
-    # Filtrar apenas as placas analisadas
     df_filtrado = df[df['Placa'].isin(placas_analisadas)]
 
-    # Cálculo por veículo (com base em número de lançamentos, não dias)
     resultados_por_veiculo = df_filtrado.groupby('Placa').agg(
         Dias_Corretos=('Correto', 'sum'),
         Dias_Totais=('Placa', 'count')
@@ -122,10 +105,8 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
         resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional']
     )
 
-    # Formata o EUFT como percentual com duas casas decimais
-    resultados_por_veiculo['EUFT (%)'] = (resultados_por_veiculo['EUFT'] * 100).map(lambda x: f"{x:.2f}".replace('.',',') + '%')
+    resultados_por_veiculo['EUFT (%)'] = (resultados_por_veiculo['EUFT'] * 100).map(lambda x: f"{x:.2f}".replace('.', ',') + '%')
 
-    # Motivo do erro baseado na soma diária
     def motivo_erro(row):
         if row['Correto']:
             return ''
@@ -157,8 +138,6 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
 
     agrupado['Motivo Erro'] = agrupado.apply(motivo_erro, axis=1)
     agrupado['Tempo Utilizacao Formatado'] = agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
-
-    # Filtra agrupado apenas com erros para exibição
     df_erros = agrupado[(agrupado['Placa'].isin(placas_analisadas)) & (agrupado['Motivo Erro'] != '')]
 
     return resultados_por_veiculo, df_erros
