@@ -256,7 +256,7 @@ def index():
             resultados_html = ""
             resultados_veiculo['lotacao_patrimonial'] = resultados_veiculo['Placa'].map(placas_to_lotacao)
             for i, row in resultados_veiculo.iterrows():
-                resultados_html += f"<tr><td>{i + 1}</td><td>{row['Placa']}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{row['EUFT']:.2f}</td></tr>"
+                resultados_html += f"<tr><td>{i + 1}</td><td>{row['Placa']}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{row['EUFT']:.2f}'.replace(".", ",")}%</td></tr>"
 
             # Agrupar os resultados por unidade (lotação patrimonial)
             resultados_por_unidade = resultados_veiculo.groupby('lotacao_patrimonial').agg({
@@ -276,7 +276,7 @@ def index():
             resultados_html += "<thead><tr><th>#</th><th>Lotação Patrimonial</th><th>Dias Corretos</th><th>Dias Totais</th><th>Adicional</th><th>EUFT Médio</th></tr></thead><tbody>"
 
             for i, row in resultados_por_unidade.iterrows():
-                resultados_html += f"<tr><td>{i + 1}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{row['EUFT']:.2f}</td></tr>"
+                resultados_html += f"<tr><td>{i + 1}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{f'{row['EUFT'] * 100:.2f}'.replace('.', ',')}%</td></tr>"
 
             resultados_html += "</tbody></table>"
 
