@@ -123,7 +123,7 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
     )
 
     # Formata o EUFT como percentual com duas casas decimais
-    resultados_por_veiculo['EUFT (%)'] = (resultados_por_veiculo['EUFT'] * 100).map(lambda x: f"{x:.2f}%")
+    resultados_por_veiculo['EUFT (%)'] = (resultados_por_veiculo['EUFT'] * 100).map(lambda x: f"{x:.2f}.replace('.',',' + '%')
 
     # Motivo do erro baseado na soma diária
     def motivo_erro(row):
