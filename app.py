@@ -167,10 +167,6 @@ def calcular_euft(df, dias_uteis_mes,
     )
     df_erros['Tempo Utilizacao Formatado'] = df_erros['Tempo Utilizacao'].map(formatar_tempo_horas_minutos)
 
-    agrupado['Motivo Erro'] = agrupado.apply(motivo_erro, axis=1)
-    agrupado['Tempo Utilizacao Formatado'] = agrupado['Tempo Utilizacao'].apply(formatar_tempo_horas_minutos)
-    df_erros = agrupado[(agrupado['Placa'].isin(placas_analisadas)) & (agrupado['Motivo Erro'] != '')]
-
     return resultados_por_veiculo, df_erros
 
 @app.route('/', methods=['GET', 'POST'])
