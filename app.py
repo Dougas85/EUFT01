@@ -3,7 +3,8 @@ import pandas as pd
 import json
 from datetime import datetime
 import tempfile
-from flask import Flask, request, render_template, redirect, flash, url_for, session, send_file
+from flask import send_file
+from flask import Flask, request, render_template, redirect, flash, url_for, session
 from placas import placas_scudo2, placas_scudo7, placas_analisadas2, placas_analisadas7, placas_especificas2, placas_especificas7, placas_mobi2, placas_mobi7, placas_to_lotacao2, placas_to_lotacao7
 
 app = Flask(__name__)
