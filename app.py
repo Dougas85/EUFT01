@@ -48,7 +48,7 @@ def calcular_tempo_utilizacao(row):
         duracao -= 1
     return round(duracao, 2)
 
-# Formatar o tempo em horas e minutos
+# Função para formatar o tempo em horas e minutos
 def formatar_tempo_horas_minutos(tempo):
     if isinstance(tempo, (int, float)):
         horas = int(tempo)
@@ -56,18 +56,33 @@ def formatar_tempo_horas_minutos(tempo):
         return f"{horas}h {minutos}m"
     return tempo
 
-# Verificar placas sem saída
-def verificar_placas_sem_saida(df_original, placas_analisadas):
-    placas_com_saida = set(df_original[df_original['Data Partida'].notna()]['Placa'].unique())
-    placas_sem_saida = placas_analisadas - placas_com_saida
-    return sorted(placas_sem_saida)
+# Função para verificar os erros por linha (ajustada para verificar os tempos e distâncias)
+def verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi):
+    tempo = row['Tempo Utilizacao']
+    dist = row['Distancia Percorrida']
+    placa = row['Placa']
 
+    if isinstance(tempo, str):  # Caso seja mensagem de erro
+        return False
+
+    if placa in placas_scudo:
+        return 1 <= tempo <= 8 and 10 <= dist <= 120
+    elif placa in placas_especificas:
+        return 1 <= tempo <= 8 and 8 <= dist <= 100
+    elif placa in placas_mobi:
+        return 1 <= tempo <= 8 and 6 <= dist <= 80
+    else:
+        return 2 <= tempo <= 8 and 6 <= dist <= 80
+
+# Função para gerar o motivo do erro
 def motivo_erro(row, placas_scudo, placas_especificas, placas_mobi):
     if row['Correto']:
         return ''
-    placa = row['Placa']
+    if isinstance(row['Tempo Utilizacao'], str):
+        return row['Tempo Utilizacao']
     tempo = row['Tempo Utilizacao']
     dist = row['Distancia Percorrida']
+    placa = row['Placa']
 
     if placa in placas_scudo:
         if not (1 <= tempo <= 8):
@@ -91,13 +106,8 @@ def motivo_erro(row, placas_scudo, placas_especificas, placas_mobi):
             return f"Distância fora do intervalo: {dist:.1f}km"
     return 'Erro não identificado'
 
-
-# Calcular EUFT
-def calcular_euft(df, dias_uteis_mes,
-                  placas_scudo, placas_especificas,
-                  placas_mobi, placas_analisadas,
-                  placas_to_lotacao):
-
+# Função principal para calcular o EUFT com base nas modificações
+def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_mobi, placas_analisadas, placas_to_lotacao):
     # 1) Cópia e conversões iniciais
     df = df.copy()
     df.loc[:, 'Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y')
@@ -106,29 +116,8 @@ def calcular_euft(df, dias_uteis_mes,
     df.loc[:, 'Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
     df.loc[:, 'Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
 
-    # 2) Vetorização do flag "Correto"
-    mask_scudo      = df['Placa'].isin(placas_scudo)
-    mask_especifica = df['Placa'].isin(placas_especificas)
-    mask_mobi       = df['Placa'].isin(placas_mobi)
-    mask_padrao     = ~(mask_scudo | mask_especifica | mask_mobi)
-
-    df.loc[:, 'Correto'] = False
-    df.loc[mask_scudo, 'Correto'] = (
-        df.loc[mask_scudo, 'Tempo Utilizacao'].between(1, 8) &
-        df.loc[mask_scudo, 'Distancia Percorrida'].between(10, 120)
-    )
-    df.loc[mask_especifica, 'Correto'] = (
-        df.loc[mask_especifica, 'Tempo Utilizacao'].between(1, 8) &
-        df.loc[mask_especifica, 'Distancia Percorrida'].between(8, 100)
-    )
-    df.loc[mask_mobi, 'Correto'] = (
-        df.loc[mask_mobi, 'Tempo Utilizacao'].between(1, 8) &
-        df.loc[mask_mobi, 'Distancia Percorrida'].between(6, 80)
-    )
-    df.loc[mask_padrao, 'Correto'] = (
-        df.loc[mask_padrao, 'Tempo Utilizacao'].between(2, 8) &
-        df.loc[mask_padrao, 'Distancia Percorrida'].between(6, 80)
-    )
+    # 2) Aplicação do flag "Correto" baseado nas placas
+    df.loc[:, 'Correto'] = df.apply(lambda row: verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi), axis=1)
 
     # 3) Agrupamento por placa e data
     agrupado = df.groupby(['Placa', 'Data Partida']).agg({
@@ -148,18 +137,19 @@ def calcular_euft(df, dias_uteis_mes,
         Dias_Totais=('Placa', 'count')
     ).reset_index()
 
+    # 6) Cálculo do EUFT com a lógica do adicional
     resultados_por_veiculo['Adicional'] = resultados_por_veiculo['Dias_Totais'].apply(
         lambda x: max(0, 18 - x) if x < 18 else 0
     )
     resultados_por_veiculo['EUFT'] = (
-        resultados_por_veiculo['Dias_Corretos'] /
+        resultados_por_veiculo['Dias_Corretos'] / 
         (resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional'])
     )
     resultados_por_veiculo['EUFT (%)'] = (
         resultados_por_veiculo['EUFT'] * 100
     ).map(lambda x: f"{x:.2f}".replace('.', ',') + '%')
 
-    # 6) DataFrame de erros diários
+    # 7) DataFrame de erros diários
     df_erros = agrupado[~agrupado['Correto']].copy()
     df_erros['Motivo Erro'] = df_erros.apply(
         lambda row: motivo_erro(row, placas_scudo, placas_especificas, placas_mobi),
