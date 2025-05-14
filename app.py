@@ -56,6 +56,12 @@ def formatar_tempo_horas_minutos(tempo):
         return f"{horas}h {minutos}m"
     return tempo
 
+# Verificar placas sem saída
+def verificar_placas_sem_saida(df_original, placas_analisadas):
+    placas_com_saida = set(df_original[df_original['Data Partida'].notna()]['Placa'].unique())
+    placas_sem_saida = placas_analisadas - placas_com_saida
+    return sorted(placas_sem_saida)
+
 # Função para verificar os erros por linha (ajustada para verificar os tempos e distâncias)
 def verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi):
     tempo = row['Tempo Utilizacao']
