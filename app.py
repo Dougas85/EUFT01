@@ -154,8 +154,6 @@ def index():
     if request.method == 'POST':
         # Obtém a região selecionada
         region = request.form.get('region')
-        #print(f"Dados recebidos do formulário: {request.form}")
-        #print(f"Região selecionada: {region}")
         
         # Processa as placas de acordo com a região
         if region == 'Região 7':
@@ -172,12 +170,7 @@ def index():
             placas_to_lotacao = placas_to_lotacao2
         # Adicione mais condições para outras regiões, conforme necessário
         
-        # Exemplo de saída para depuração
-        #print(f"Placas Scudo: {placas_scudo}")
-        #print(f"Placas Analisadas: {placas_analisadas}")
-        #print(f"Placas Lotação: {placas_to_lotacao}")
-        
-        # Aqui começa o processamento do arquivo CSV
+        # Processamento do arquivo CSV
         if 'file' not in request.files:
             flash('Nenhum arquivo enviado.', 'danger')
             return redirect(request.url)
@@ -192,12 +185,10 @@ def index():
             # Salva o arquivo temporariamente
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
-            #print(f"Arquivo salvo em: {file_path}")
 
             try:
                 # Lê o arquivo CSV
                 df_original = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
-                #print(f"Arquivo CSV carregado: {df_original.head()}")  # Verifica se o CSV foi carregado corretamente
 
                 # Processamento dos dados
                 df_original.columns = df_original.columns.str.strip()
@@ -208,20 +199,13 @@ def index():
                     raise ValueError("Coluna 'Data Partida' não encontrada no arquivo.")
 
                 df = df_original.dropna(subset=['Data Retorno', 'Hora Retorno', 'Hod. Retorno'])
-                #print(f"DataFrame processado: {df.head()}")  # Verifica o DataFrame após o processamento
 
                 # Função de cálculo do EUFT
                 resultados_veiculo, erros = calcular_euft(df, 20, placas_scudo, placas_especificas, placas_mobi, placas_analisadas, placas_to_lotacao)
 
-
-                #print(f"Quantidade de resultados: {len(resultados_veiculo)}")
-                #print(f"Resultados do cálculo do EUFT: {resultados_veiculo.head()}")  # Verifica os resultados do cálculo
-
                 placas_faltantes = verificar_placas_sem_saida(df_original, placas_analisadas)
-                #print(f"Placas faltantes: {placas_faltantes}")  # Verifica as placas faltantes
 
             except Exception as e:
-                #print(f"Ocorreu um erro ao processar o arquivo: {e}")  # Exibe o erro no console
                 return f"Ocorreu um erro ao processar o arquivo: {e}"
 
             # Limpeza de colunas desnecessárias
@@ -231,37 +215,36 @@ def index():
                 erros = erros.drop(columns=['Correto'])
 
             # Montando o HTML para exibição dos resultados
-            
-             resultados_html = ""
-             resultados_veiculo['lotacao_patrimonial'] = resultados_veiculo['Placa'].map(placas_to_lotacao)
+            resultados_html = ""
+            resultados_veiculo['lotacao_patrimonial'] = resultados_veiculo['Placa'].map(placas_to_lotacao)
                 
-             # Loop para gerar tabela por veículo
-             for i, row in resultados_veiculo.iterrows():
+            # Loop para gerar tabela por veículo
+            for i, row in resultados_veiculo.iterrows():
                 euft_percent = f"{row['EUFT'] * 100:.2f}".replace('.', ',') + '%'
                 resultados_html += f"<tr><td>{i + 1}</td><td>{row['Placa']}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{euft_percent}</td></tr>"
                 
-             # Agrupar os resultados por unidade (lotação patrimonial)
-             resultados_por_unidade = resultados_veiculo.groupby('lotacao_patrimonial').agg({
+            # Agrupar os resultados por unidade (lotação patrimonial)
+            resultados_por_unidade = resultados_veiculo.groupby('lotacao_patrimonial').agg({
                 'Dias_Corretos': 'sum',
                 'Dias_Totais': 'sum',
                 'Adicional': 'sum',
                 'EUFT': 'mean'
-             }).reset_index()
+            }).reset_index()
                 
-             # Ordenar opcionalmente por EUFT médio
-             resultados_por_unidade = resultados_por_unidade.sort_values(by='EUFT', ascending=False)
+            # Ordenar opcionalmente por EUFT médio
+            resultados_por_unidade = resultados_por_unidade.sort_values(by='EUFT', ascending=False)
                 
-             # Criar a tabela HTML de resultados por unidade
-             resultados_html += "<h3 class='mt-4'>Resultados</h3>"
-             resultados_html += "<table id='unidadeTable' class='table table-bordered table-striped mt-2'>"
-             resultados_html += "<thead><tr><th>#</th><th>Lotação Patrimonial</th><th>Dias Corretos</th><th>Dias Totais</th><th>Adicional</th><th>EUFT Médio</th></tr></thead><tbody>"
+            # Criar a tabela HTML de resultados por unidade
+            resultados_html += "<h3 class='mt-4'>Resultados</h3>"
+            resultados_html += "<table id='unidadeTable' class='table table-bordered table-striped mt-2'>"
+            resultados_html += "<thead><tr><th>#</th><th>Lotação Patrimonial</th><th>Dias Corretos</th><th>Dias Totais</th><th>Adicional</th><th>EUFT Médio</th></tr></thead><tbody>"
                 
-             # Loop para gerar tabela por unidade
-             for i, row in resultados_por_unidade.iterrows():
+            # Loop para gerar tabela por unidade
+            for i, row in resultados_por_unidade.iterrows():
                 euft_unidade_percent = f"{row['EUFT'] * 100:.2f}".replace('.', ',') + '%'
                 resultados_html += f"<tr><td>{i + 1}</td><td>{row['lotacao_patrimonial']}</td><td>{row['Dias_Corretos']}</td><td>{row['Dias_Totais']}</td><td>{row['Adicional']}</td><td>{euft_unidade_percent}</td></tr>"
                 
-             resultados_html += "</tbody></table>"   
+            resultados_html += "</tbody></table>"   
 
             erros_html = ""
             for i, row in erros.iterrows():
@@ -278,7 +261,6 @@ def index():
 
             labels = impacto_unidade['Unidade'].tolist()
             valores = impacto_unidade['Qtd_Erros'].tolist()
-            
 
             # Salvar os erros em arquivos temporários para download
             temp_csv_path = os.path.join(tempfile.gettempdir(), "erros_euft.csv")
