@@ -33,6 +33,7 @@ regioes = {
     }
 }
 
+
 # Função para calcular o tempo de utilização
 def calcular_tempo_utilizacao(row):
     try:
@@ -41,14 +42,14 @@ def calcular_tempo_utilizacao(row):
             return 'Veículo sem retorno registrado'
         retorno = datetime.strptime(f"{row['Data Retorno'].date()} {row['Hora Retorno']}", "%Y-%m-%d %H:%M")
     except Exception as e:
-        raise ValueError(f"Erro ao converter data/hora: {e}")
-
+        return f"Erro ao converter data/hora: {e}"
+    
     duracao = (retorno - partida).total_seconds() / 3600
     if row['Almoço?'] == 'S':
         duracao -= 1
     return round(duracao, 2)
 
-# Função para formatar o tempo em horas e minutos
+# Formatar tempo para exibição
 def formatar_tempo_horas_minutos(tempo):
     if isinstance(tempo, (int, float)):
         horas = int(tempo)
@@ -62,13 +63,13 @@ def verificar_placas_sem_saida(df_original, placas_analisadas):
     placas_sem_saida = placas_analisadas - placas_com_saida
     return sorted(placas_sem_saida)
 
-# Função para verificar os erros por linha (ajustada para verificar os tempos e distâncias)
+# Verifica se linha está correta (tempo e distância)
 def verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi):
     tempo = row['Tempo Utilizacao']
     dist = row['Distancia Percorrida']
     placa = row['Placa']
 
-    if isinstance(tempo, str):  # Caso seja mensagem de erro
+    if isinstance(tempo, str):  # erro de cálculo
         return False
 
     if placa in placas_scudo:
@@ -80,7 +81,7 @@ def verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi
     else:
         return 2 <= tempo <= 8 and 6 <= dist <= 80
 
-# Função para gerar o motivo do erro
+# Gerar motivo de erro
 def motivo_erro(row, placas_scudo, placas_especificas, placas_mobi):
     if row['Correto']:
         return ''
@@ -112,58 +113,78 @@ def motivo_erro(row, placas_scudo, placas_especificas, placas_mobi):
             return f"Distância fora do intervalo: {dist:.1f}km"
     return 'Erro não identificado'
 
-# Função principal para calcular o EUFT com base nas modificações
 def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_mobi, placas_analisadas, placas_to_lotacao):
-    # 1) Cópia e conversões iniciais
+    # 1) Cópia e pré-processamento
     df = df.copy()
-    df.loc[:, 'Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y')
-    df.loc[:, 'Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y')
-    df.loc[:, 'Placa'] = df['Placa'].str.strip().str.upper()
-    df.loc[:, 'Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
-    df.loc[:, 'Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
+    df['Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y', errors='coerce')
+    df['Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y', errors='coerce')
+    df['Placa'] = df['Placa'].str.strip().str.upper()
 
-    # 2) Aplicação do flag "Correto" baseado nas placas
-    df.loc[:, 'Correto'] = df.apply(lambda row: verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi), axis=1)
+    df['Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
+    df['Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
 
-    # 3) Agrupamento por placa e data
-    agrupado = df.groupby(['Placa', 'Data Partida']).agg({
+    # 2) Agrupar por placa e data para somar os valores diários
+    df_agrupado = df.groupby(['Placa', 'Data Partida']).agg({
         'Tempo Utilizacao': 'sum',
         'Distancia Percorrida': 'sum',
         'Lotacao Patrimonial': 'first',
-        'Unidade em Operação': 'first',
-        'Correto': 'first'
+        'Unidade em Operação': 'first'
     }).reset_index()
 
-    # 4) Filtra apenas as placas analisadas
-    agrupado = agrupado[agrupado['Placa'].isin(placas_analisadas)]
+    # 3) Filtrar apenas placas analisadas
+    df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_analisadas)]
 
-    # 5) Cálculo por veículo
-    resultados_por_veiculo = agrupado.groupby('Placa').agg(
+    # 4) Verificar corretude agora com os valores totais diários
+    df_agrupado['Correto'] = df_agrupado.apply(lambda row: verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi), axis=1)
+
+    # 5) Gerar motivo de erro para dias incorretos
+    df_agrupado['Motivo Erro'] = df_agrupado.apply(lambda row: motivo_erro(row, placas_scudo, placas_especificas, placas_mobi), axis=1)
+    df_agrupado['Tempo Utilizacao Formatado'] = df_agrupado['Tempo Utilizacao'].map(formatar_tempo_horas_minutos)
+
+    # 6) Calcular resultados por veículo
+    resultados_por_veiculo = df_agrupado.groupby('Placa').agg(
         Dias_Corretos=('Correto', 'sum'),
-        Dias_Totais=('Placa', 'count')
+        Dias_Totais=('Correto', 'count')
     ).reset_index()
 
-    # 6) Cálculo do EUFT com a lógica do adicional
     resultados_por_veiculo['Adicional'] = resultados_por_veiculo['Dias_Totais'].apply(
         lambda x: max(0, 18 - x) if x < 18 else 0
     )
+
     resultados_por_veiculo['EUFT'] = (
         resultados_por_veiculo['Dias_Corretos'] / 
         (resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional'])
     )
+
     resultados_por_veiculo['EUFT (%)'] = (
         resultados_por_veiculo['EUFT'] * 100
     ).map(lambda x: f"{x:.2f}".replace('.', ',') + '%')
 
-    # 7) DataFrame de erros diários
-    df_erros = agrupado[~agrupado['Correto']].copy()
-    df_erros['Motivo Erro'] = df_erros.apply(
-        lambda row: motivo_erro(row, placas_scudo, placas_especificas, placas_mobi),
-        axis=1
-    )
-    df_erros['Tempo Utilizacao Formatado'] = df_erros['Tempo Utilizacao'].map(formatar_tempo_horas_minutos)
+    # 7) Adicionar linha TOTAL
+    total_veiculos = resultados_por_veiculo.shape[0]
+    total_dias_corretos = resultados_por_veiculo['Dias_Corretos'].sum()
+    total_dias_totais = resultados_por_veiculo['Dias_Totais'].sum()
+    total_adicional = resultados_por_veiculo['Adicional'].sum()
+    media_geral_euft = (total_dias_corretos / (total_dias_totais + total_adicional)) if (total_dias_totais + total_adicional) > 0 else 0
+    media_geral_euft_percentual = f"{media_geral_euft * 100:.2f}".replace('.', ',') + '%'
+
+    linha_total = pd.DataFrame([{
+        'Placa': 'TOTAL',
+        'Dias_Totais': total_dias_totais,
+        'Dias_Corretos': total_dias_corretos,
+        'Adicional': total_adicional,
+        'EUFT': media_geral_euft,
+        'EUFT (%)': media_geral_euft_percentual
+    }])
+
+    resultados_por_veiculo = pd.concat([resultados_por_veiculo, linha_total], ignore_index=True)
+
+    # 8) Retornar dataframe final e erros
+    df_erros = df_agrupado[~df_agrupado['Correto']].copy()
 
     return resultados_por_veiculo, df_erros
+
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
