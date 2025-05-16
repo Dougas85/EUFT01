@@ -123,6 +123,9 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
     df['Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
     df['Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
 
+    # Filtra apenas registros com N° Distrito preenchido
+    df = df[df['N° Distrito'].notna() & (df['N° Distrito'].astype(str).str.strip() != '')]
+
     # 2) Agrupar por placa e data para somar os valores diários
     df_agrupado = df.groupby(['Placa', 'Data Partida']).agg({
         'Tempo Utilizacao': 'sum',
