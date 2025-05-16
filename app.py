@@ -127,7 +127,7 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
 
 
     # 2) Agrupar por placa e data para somar os valores diários
-    df_agrupado = df.groupby(['Placa', 'Data Partida']).agg({
+    df_agrupado = df.groupby(['Placa', 'Data Partida', 'Matrícula Condutor']).agg({
         'Tempo Utilizacao': 'sum',
         'Distancia Percorrida': 'sum',
         'Lotacao Patrimonial': 'first',
