@@ -294,7 +294,7 @@ def index():
             # Criar a tabela HTML de resultados por unidade
             resultados_html += "<h3 class='mt-4'>Resultados</h3>"
             resultados_html += "<table id='unidadeTable' class='table table-bordered table-striped mt-2'>"
-            resultados_html += "<thead><tr><th>#</th><th>Lotação Patrimonial</th><th>Dias Corretos</th><th>Dias Totais</th><th>Adicional</th><th>EUFT Médio</th></tr></thead><tbody>"
+            resultados_html += "<thead><tr><th>Id</th><th>Lotação Patrimonial</th><th>Lançamentos Corretos</th><th>Lançamentos Totais</th><th>Adicional</th><th>EUFT Médio</th></tr></thead><tbody>"
                 
             # Loop para gerar tabela por unidade
             for i, row in resultados_por_unidade.iterrows():
