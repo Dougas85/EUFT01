@@ -114,7 +114,8 @@ def motivo_erro(row, placas_scudo, placas_especificas, placas_mobi):
     return 'Erro não identificado'
 
 def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_mobi, placas_analisadas, placas_to_lotacao):
-    # 1) Cópia e pré-processamento
+
+    # 1) Cópia e pré-processamento geral
     df = df.copy()
     df['Data Partida'] = pd.to_datetime(df['Data Partida'], format='%d/%m/%Y', errors='coerce')
     df['Data Retorno'] = pd.to_datetime(df['Data Retorno'], format='%d/%m/%Y', errors='coerce')
@@ -123,33 +124,44 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
     df['Tempo Utilizacao'] = df.apply(calcular_tempo_utilizacao, axis=1)
     df['Distancia Percorrida'] = df['Hod. Retorno'] - df['Hod. Partida']
 
-    df = df[df['Nº Distrito'].notna() & (df['Nº Distrito'].astype(str).str.strip() != '')]
+    # 2) Calcular DIAS REGISTRADOS (inclusive com erros ou campos faltantes)
+    df_registros = df[df['Placa'].isin(placas_analisadas)]
+    registros_distintos = df_registros.groupby(['Placa', 'Data Partida', 'Matrícula Condutor']).size().reset_index(name='count')
+    dias_registrados_por_placa = registros_distintos.groupby('Placa')['count'].count().reset_index()
+    dias_registrados_por_placa.rename(columns={'count': 'Dias_Totais'}, inplace=True)
 
+    # 3) Filtrar dados válidos (com Nº Distrito) para análise de corretude
+    df_validos = df[
+        df['Nº Distrito'].notna() & 
+        (df['Nº Distrito'].astype(str).str.strip() != '') &
+        df['Placa'].isin(placas_analisadas)
+    ]
 
-    # 2) Agrupar por placa e data para somar os valores diários
-    df_agrupado = df.groupby(['Placa', 'Data Partida', 'Matrícula Condutor']).agg({
+    df_agrupado = df_validos.groupby(['Placa', 'Data Partida', 'Matrícula Condutor']).agg({
         'Tempo Utilizacao': 'sum',
         'Distancia Percorrida': 'sum',
         'Lotacao Patrimonial': 'first',
         'Unidade em Operação': 'first'
     }).reset_index()
 
-    # 3) Filtrar apenas placas analisadas
-    df_agrupado = df_agrupado[df_agrupado['Placa'].isin(placas_analisadas)]
-
-    # 4) Verificar corretude agora com os valores totais diários
+    # 4) Verificar corretude
     df_agrupado['Correto'] = df_agrupado.apply(lambda row: verificar_corretude_linha(row, placas_scudo, placas_especificas, placas_mobi), axis=1)
 
-    # 5) Gerar motivo de erro para dias incorretos
+    # 5) Motivo do erro e formatação
     df_agrupado['Motivo Erro'] = df_agrupado.apply(lambda row: motivo_erro(row, placas_scudo, placas_especificas, placas_mobi), axis=1)
     df_agrupado['Tempo Utilizacao Formatado'] = df_agrupado['Tempo Utilizacao'].map(formatar_tempo_horas_minutos)
 
-    # 6) Calcular resultados por veículo
+    # 6) Calcular Dias Corretos
     resultados_por_veiculo = df_agrupado.groupby('Placa').agg(
-        Dias_Corretos=('Correto', 'sum'),
-        Dias_Totais=('Correto', 'count')
+        Dias_Corretos=('Correto', 'sum')
     ).reset_index()
 
+    # 7) Mesclar com Dias Totais
+    resultados_por_veiculo = resultados_por_veiculo.merge(dias_registrados_por_placa, on='Placa', how='outer')
+    resultados_por_veiculo['Dias_Corretos'] = resultados_por_veiculo['Dias_Corretos'].fillna(0).astype(int)
+    resultados_por_veiculo['Dias_Totais'] = resultados_por_veiculo['Dias_Totais'].fillna(0).astype(int)
+
+    # 8) Calcular adicional e EUFT
     resultados_por_veiculo['Adicional'] = resultados_por_veiculo['Dias_Totais'].apply(
         lambda x: max(0, 18 - x) if x < 18 else 0
     )
@@ -157,13 +169,13 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
     resultados_por_veiculo['EUFT'] = (
         resultados_por_veiculo['Dias_Corretos'] / 
         (resultados_por_veiculo['Dias_Totais'] + resultados_por_veiculo['Adicional'])
-    )
+    ).fillna(0)
 
     resultados_por_veiculo['EUFT (%)'] = (
         resultados_por_veiculo['EUFT'] * 100
     ).map(lambda x: f"{x:.2f}".replace('.', ',') + '%')
 
-    # 7) Adicionar linha TOTAL
+    # 9) Adicionar linha TOTAL
     total_veiculos = resultados_por_veiculo.shape[0]
     total_dias_corretos = resultados_por_veiculo['Dias_Corretos'].sum()
     total_dias_totais = resultados_por_veiculo['Dias_Totais'].sum()
@@ -182,12 +194,10 @@ def calcular_euft(df, dias_uteis_mes, placas_scudo, placas_especificas, placas_m
 
     resultados_por_veiculo = pd.concat([resultados_por_veiculo, linha_total], ignore_index=True)
 
-    # 8) Retornar dataframe final e erros
+    # 10) Retornar também os erros
     df_erros = df_agrupado[~df_agrupado['Correto']].copy()
 
     return resultados_por_veiculo, df_erros
-
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
