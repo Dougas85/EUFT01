@@ -39,7 +39,7 @@ regioes = {
         'placas_especificas': placas_especificas7,
         'placas_mobi': placas_mobi7,
         'placas_to_lotacao': placas_to_lotacao7
-    }
+    },
     'Região 1': {
         'placas_scudo': placas_scudo1,
         'placas_analisadas': placas_analisadas1,
