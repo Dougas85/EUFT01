@@ -241,13 +241,14 @@ def index():
             placas_especificas = placas_especificas2
             placas_mobi = placas_mobi2
             placas_to_lotacao = placas_to_lotacao2
-         elif region == 'Região 1':
+        elif region == 'Região 1':
             placas_scudo = placas_scudo1
             placas_analisadas = placas_analisadas1
             placas_especificas = placas_especificas1
             placas_mobi = placas_mobi1
             placas_to_lotacao = placas_to_lotacao1
         # Adicione mais condições para outras regiões, conforme necessário
+
         
         # Processamento do arquivo CSV
         if 'file' not in request.files:
