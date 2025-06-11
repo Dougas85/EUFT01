@@ -5,7 +5,9 @@ from datetime import datetime
 import tempfile
 from flask import send_file
 from flask import Flask, request, render_template, redirect, flash, url_for, session
-from placas import placas_scudo2, placas_scudo7, placas_analisadas2, placas_analisadas7, placas_especificas2, placas_especificas7, placas_mobi2, placas_mobi7, placas_to_lotacao2, placas_to_lotacao7
+from placas import placas_scudo2, placas_scudo7, placas_analisadas2, placas_analisadas7, placas_especificas2, placas_especificas7, placas_mobi2, placas_mobi7, placas_to_lotacao2, placas_to_lotacao7,
+    placas_scudo1, placas_mobi1,
+    placas_especificas1, placas_analisadas1, placas_to_lotacao1
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -30,6 +32,13 @@ regioes = {
         'placas_especificas': placas_especificas7,
         'placas_mobi': placas_mobi7,
         'placas_to_lotacao': placas_to_lotacao7
+    }
+    'Região 1': {
+        'placas_scudo': placas_scudo1,
+        'placas_analisadas': placas_analisadas1,
+        'placas_especificas': placas_especificas1,
+        'placas_mobi': placas_mobi1,
+        'placas_to_lotacao': placas_to_lotacao1
     }
 }
 
@@ -225,6 +234,12 @@ def index():
             placas_especificas = placas_especificas2
             placas_mobi = placas_mobi2
             placas_to_lotacao = placas_to_lotacao2
+         elif region == 'Região 1':
+            placas_scudo = placas_scudo1
+            placas_analisadas = placas_analisadas1
+            placas_especificas = placas_especificas1
+            placas_mobi = placas_mobi1
+            placas_to_lotacao = placas_to_lotacao1
         # Adicione mais condições para outras regiões, conforme necessário
         
         # Processamento do arquivo CSV
