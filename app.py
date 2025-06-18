@@ -6,14 +6,16 @@ import tempfile
 from flask import send_file
 from flask import Flask, request, render_template, redirect, flash, url_for, session
 from placas import (
-    placas_scudo2, placas_scudo7,
-    placas_analisadas2, placas_analisadas7,
-    placas_especificas2, placas_especificas7,
-    placas_mobi2, placas_mobi7,
-    placas_to_lotacao2, placas_to_lotacao7,
-    placas_scudo1, placas_mobi1,
-    placas_especificas1, placas_analisadas1,
-    placas_to_lotacao1,
+    placas_scudo2, placas_scudo7, placas_analisadas2, placas_analisadas7,
+    placas_especificas2, placas_especificas7, placas_mobi2, placas_mobi7,
+    placas_to_lotacao2, placas_to_lotacao7, placas_scudo1, placas_mobi1,
+    placas_especificas1, placas_analisadas1, placas_to_lotacao1, placas_scudo3,
+    placas_mobi3, placas_especificas3, placas_analisadas3, placas_to_lotacao3,
+    placas_scudo4, placas_mobi4, placas_especificas4, placas_analisadas4,
+    placas_to_lotacao4, placas_scudo5, placas_mobi5, placas_especificas5,
+    placas_analisadas5, placas_to_lotacao5, placas_scudo6, placas_mobi6,
+    placas_especificas6, placas_analisadas6, placas_to_lotacao6, placas_scudo8,
+    placas_mobi8, placas_especificas8, placas_analisadas8, placas_to_lotacao8,
 )
 
 app = Flask(__name__)
