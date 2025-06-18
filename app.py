@@ -83,6 +83,7 @@ regioes = {
         'placas_especificas': placas_especificas8,
         'placas_mobi': placas_mobi8,
         'placas_to_lotacao': placas_to_lotacao8
+    }
 }
 
 
