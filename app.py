@@ -46,7 +46,41 @@ regioes = {
         'placas_especificas': placas_especificas1,
         'placas_mobi': placas_mobi1,
         'placas_to_lotacao': placas_to_lotacao1
-    }
+    },
+    'Região 3': {
+        'placas_scudo': placas_scudo3,
+        'placas_analisadas': placas_analisadas3,
+        'placas_especificas': placas_especificas3,
+        'placas_mobi': placas_mobi3,
+        'placas_to_lotacao': placas_to_lotacao3
+    },
+    'Região 4': {
+        'placas_scudo': placas_scudo4,
+        'placas_analisadas': placas_analisadas4,
+        'placas_especificas': placas_especificas4,
+        'placas_mobi': placas_mobi4,
+        'placas_to_lotacao': placas_to_lotacao4
+    },
+    'Região 5': {
+        'placas_scudo': placas_scudo5,
+        'placas_analisadas': placas_analisadas5,
+        'placas_especificas': placas_especificas5,
+        'placas_mobi': placas_mobi5,
+        'placas_to_lotacao': placas_to_lotacao5
+    },
+    'Região 6': {
+        'placas_scudo': placas_scudo6,
+        'placas_analisadas': placas_analisadas6,
+        'placas_especificas': placas_especificas6,
+        'placas_mobi': placas_mobi6,
+        'placas_to_lotacao': placas_to_lotacao6
+    },
+    'Região 8': {
+        'placas_scudo': placas_scudo8,
+        'placas_analisadas': placas_analisadas8,
+        'placas_especificas': placas_especificas8,
+        'placas_mobi': placas_mobi8,
+        'placas_to_lotacao': placas_to_lotacao8
 }
 
 
@@ -247,9 +281,39 @@ def index():
             placas_especificas = placas_especificas1
             placas_mobi = placas_mobi1
             placas_to_lotacao = placas_to_lotacao1
-        # Adicione mais condições para outras regiões, conforme necessário
 
-        
+        elif region == 'Região 3':
+            placas_scudo = placas_scudo3
+            placas_analisadas = placas_analisadas3
+            placas_especificas = placas_especificas3
+            placas_mobi = placas_mobi3
+            placas_to_lotacao = placas_to_lotacao3
+        elif region == 'Região 4':
+            placas_scudo = placas_scudo4
+            placas_analisadas = placas_analisadas4
+            placas_especificas = placas_especificas4
+            placas_mobi = placas_mobi4
+            placas_to_lotacao = placas_to_lotacao4
+        elif region == 'Região 5':
+            placas_scudo = placas_scudo5
+            placas_analisadas = placas_analisadas5
+            placas_especificas = placas_especificas5
+            placas_mobi = placas_mobi5
+            placas_to_lotacao = placas_to_lotacao5
+        elif region == 'Região 6':
+            placas_scudo = placas_scudo6
+            placas_analisadas = placas_analisadas6
+            placas_especificas = placas_especificas6
+            placas_mobi = placas_mobi6
+            placas_to_lotacao = placas_to_lotacao6
+        elif region == 'Região 8':
+            placas_scudo = placas_scudo8
+            placas_analisadas = placas_analisadas8
+            placas_especificas = placas_especificas8
+            placas_mobi = placas_mobi8
+            placas_to_lotacao = placas_to_lotacao8
+        # Adicione mais condições para outras regiões, conforme necessário
+      
         # Processamento do arquivo CSV
         if 'file' not in request.files:
             flash('Nenhum arquivo enviado.', 'danger')
